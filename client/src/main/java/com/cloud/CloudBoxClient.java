@@ -4,8 +4,8 @@ import java.io.File;
 import java.net.InetSocketAddress;
 
 import com.cloud.handlers.JsonRequestHandler;
-import com.cloud.utils.JSON;
 import com.cloud.utils.exep.IllegalDataException;
+import com.cloud.utils.jsonQueries.StandardJsonQuery;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -55,8 +55,8 @@ public class CloudBoxClient {
                                     pipeline.addLast(new ChannelInboundHandlerAdapter() {
                                         @Override
                                         public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                                        	if (data instanceof JSON)
-                                        		sendData((JSON)data);
+                                        	if (data instanceof StandardJsonQuery)
+                                        		sendData((StandardJsonQuery)data);
                                         	else throw new IllegalDataException(data.getClass());
                                         	
                                         }
@@ -83,7 +83,7 @@ public class CloudBoxClient {
         }
 	}
 	
-	public void sendData(JSON data) {
+	public void sendData(StandardJsonQuery data) {
         currentChannel.writeAndFlush(data);
     }
 

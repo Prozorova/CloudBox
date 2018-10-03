@@ -7,7 +7,6 @@ import java.util.ResourceBundle;
 import org.apache.log4j.Logger;
 
 import com.cloud.CloudBoxClient;
-import com.cloud.utils.JSON;
 import com.cloud.utils.jsonQueries.StandardJsonQuery;
 
 import javafx.fxml.FXML;
@@ -40,7 +39,7 @@ public class AuthController implements Initializable {
 	 */
 	@FXML public void btnLoginClickMeReaction() {
 		
-		JSON jsonQuary = new StandardJsonQuery(StandardJsonQuery.QueryType.AUTH_DATA, 
+		StandardJsonQuery jsonQuary = new StandardJsonQuery(StandardJsonQuery.QueryType.AUTH_DATA, 
 															new LinkedHashMap<String, String>() {
 																{
 																put("login", textFieldLogin.getText());

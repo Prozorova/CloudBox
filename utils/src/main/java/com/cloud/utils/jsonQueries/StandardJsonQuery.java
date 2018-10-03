@@ -1,25 +1,51 @@
 package com.cloud.utils.jsonQueries;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
-import com.cloud.utils.JSON;
-
-public class StandardJsonQuery implements JSON {
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+ 
+/**
+ * Содержит все параметры запросов/ответов,
+ * используется для работы с json
+ * @author prozorova
+ */
+public class StandardJsonQuery  {
 	
-	public enum QueryType {AUTH_DATA};
+	// TODO список всех типов запросов/ответов
+	public enum QueryType {
+					AUTH_DATA	   // данные аутентификации
+		};
 	
 	private String queryType;
-	private Map<String, String> parameters;
+	
+	// обычные параметры название-значение
+	@JsonInclude(value=Include.NON_EMPTY, content=Include.NON_NULL)
+	private Map<String, String> standardParams;
+	
+	// параметры, задающиеся списком (напр. для отправки списка файлов пользователю)
+	@JsonInclude(value=Include.NON_EMPTY, content=Include.NON_NULL)
+	private Map<String, Set<String>> paramsWithSet;
 	
 	public StandardJsonQuery() {
-		parameters = new LinkedHashMap<>();
 	}
 	
-	public StandardJsonQuery(QueryType queryType, Map<String, String> parameters) {
+	public StandardJsonQuery(QueryType queryType, 
+			                 Map<String, String> parameters, 
+			                 Map<String, Set<String>> paramsWithSet) {
 		this.queryType = queryType.toString();
-		this.parameters = parameters;
+		this.standardParams = parameters;
+		this.paramsWithSet = paramsWithSet;
 	}
+	
+	public StandardJsonQuery(QueryType queryType, 
+			Map<String, String> parameters) {
+		this(queryType, parameters, null);
+	}
+
+	
+	// ************ геттеры / сеттеры для корректной работы jackson ************ \\
 
 	public String getQueryType() {
 		return queryType;
@@ -29,14 +55,19 @@ public class StandardJsonQuery implements JSON {
 		this.queryType = queryType;
 	}
 
-	public Map<String, String> getParameters() {
-		return parameters;
+	public Map<String, String> getStandartParams() {
+		return standardParams;
 	}
 
-	public void setParameters(Map<String, String> parameters) {
-		this.parameters = parameters;
+	public void setStandartParams(Map<String, String> standartParams) {
+		this.standardParams = standartParams;
 	}
-	
-	
 
+	public Map<String, Set<String>> getParamsWithSet() {
+		return paramsWithSet;
+	}
+
+	public void setParamsWithSet(Map<String, Set<String>> paramsWithSet) {
+		this.paramsWithSet = paramsWithSet;
+	}
 }

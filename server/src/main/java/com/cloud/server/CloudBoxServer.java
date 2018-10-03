@@ -3,7 +3,7 @@ package com.cloud.server;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
-import com.cloud.server.handlers.JsonResponseCallbackHandler;
+import com.cloud.server.handlers.JacksonJsonHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -38,7 +38,7 @@ public class CloudBoxServer {
 									ChannelPipeline pipeline = socketChannel.pipeline();
 									pipeline.addLast(new ObjectEncoder());
 									pipeline.addLast(new JsonObjectDecoder());
-									pipeline.addLast(new JsonResponseCallbackHandler());
+									pipeline.addLast(new JacksonJsonHandler());
 								}
 							})
 							.bind(INET_HOST, INET_PORT_NUMBER)
