@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cloud.fx.AuthController" >
+	
+	<center >
+	    	<VBox alignment="CENTER" spacing="5" >
+	    		<Label fx:id="cloudLabel"  />
+	    		<Label alignment="TOP_CENTER" text="Login" />
+	    		<TextField fx:id="textFieldLogin" maxWidth="200"/>
+	    		<Label alignment="TOP_CENTER" text="Password" />
+	    		<TextField fx:id="textFieldPass" maxWidth="200"/>
+	    		<Label fx:id="labelPassConfirm" alignment="TOP_CENTER" text="Password confirmation" visible="false" />
+	    		<TextField fx:id="textFieldPassConfirm" maxWidth="200" visible="false" />
+	    		<VBox fx:id="vboxButtons" alignment="CENTER" spacing="25">
+		    		<Button fx:id="btnLogin" text="LOGIN" onAction="#btnLoginClickMeReaction" maxWidth="200"/>
+		    		<Button fx:id="btnSendAuth" text="REGISTER" onAction="#btnbtnSendAuthClickMeReaction" 
+		    									maxWidth="200" visible="false" managed="false" />
+		    		<Button fx:id="btnReg" text="REGISTRATION" onAction="#btnbtnRegClickMeReaction" maxWidth="200"/>
+		    		<Button fx:id="btnLoginWithoutReg" text="BACK TO LOGIN" onAction="#btnBackToLoginClickMeReaction" 
+		    									maxWidth="200" visible="false" managed="false" />
+		    	</VBox>
+	    	</VBox>
+    </center>
+    
+</BorderPane>
+

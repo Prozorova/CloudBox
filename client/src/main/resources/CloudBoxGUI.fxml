@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.effect.*?>
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.text.TextFlow?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
+	fx:id="mainBorderPane" fx:controller="com.cloud.fx.Controller">
+
+	<top>
+		<VBox>
+			<!-- Основное меню -->
+			<MenuBar BorderPane.alignment="CENTER">
+				<menus>
+					<Menu text="File">
+						<items>
+							<MenuItem text="Close" onAction="#cloudExit"/>
+						</items>
+					</Menu>
+					<Menu text="Edit">
+						<items>
+							<MenuItem text="Copy" />
+							<MenuItem text="Paste" />
+							<MenuItem text="Delete" />
+						</items>
+					</Menu>
+					<Menu text="Help">
+						<items>
+							<MenuItem text="About" />
+						</items>
+					</Menu>
+				</menus>
+			</MenuBar>
+			<HBox fx:id="btnGroup">
+			<!-- Панель инструментов -->
+				<Button fx:id="btnCopy" onAction="#btnCopyClickMeReaction">
+					<tooltip><Tooltip text="Copy" /></tooltip>
+				</Button>
+				<Button fx:id="btnConnect" onAction="#btnConnectClickMeReaction">
+					<tooltip><Tooltip text="Connect" /></tooltip>
+				</Button>
+				<Button fx:id="btnContacts" onAction="#btnContactsClickMeReaction">
+					<tooltip><Tooltip text="Contacts" /></tooltip>
+				</Button>
+				<Button fx:id="btnDelete" onAction="#btnDeleteClickMeReaction">
+					<tooltip><Tooltip text="Delete" /></tooltip>
+				</Button>
+				<Button fx:id="btnExport" onAction="#btnExportClickMeReaction">
+					<tooltip><Tooltip text="Export" /></tooltip>
+				</Button>
+				<Button fx:id="btnImport" onAction="#btnImportClickMeReaction">
+					<tooltip><Tooltip text="Import" /></tooltip>
+				</Button>
+				<Button fx:id="btnHome" onAction="#btnHomeClickMeReaction">
+					<tooltip><Tooltip text="To home" /></tooltip>
+				</Button>
+				<Button fx:id="btnLogOff" onAction="#btnLogOffClickMeReaction">
+					<tooltip><Tooltip text="Log Off" /></tooltip>
+				</Button>
+				<Button fx:id="btnNew" onAction="#btnNewClickMeReaction">
+					<tooltip><Tooltip text="New folder" /></tooltip>
+				</Button>
+				<Button fx:id="btnProperties" onAction="#btnPropertiesClickMeReaction">
+					<tooltip><Tooltip text="Properties" /></tooltip>
+				</Button>
+				<Button fx:id="btnShare" onAction="#btnShareClickMeReaction">
+					<tooltip><Tooltip text="Share file" /></tooltip>
+				</Button>
+			</HBox>
+		</VBox>
+	</top>
+	
+	<left>
+			<TableView fx:id="tableClient" >
+			      <columns>
+			        <!-- Колонки таблицы -->
+			        <TableColumn fx:id="label" prefWidth="200" />
+			        <TableColumn fx:id="fileSize" prefWidth="75" />
+			        <TableColumn fx:id="dateModified" prefWidth="200" />
+			      </columns>
+		    </TableView>
+	</left>
+	
+    <center>
+	    	<VBox alignment="CENTER" spacing="10" minWidth="50" maxWidth="50" >
+	    		<Button fx:id="btnAddAll" onAction="#btnAddAllClickMeReaction">
+					<tooltip><Tooltip text="Add all files" /></tooltip>
+				</Button>
+				<Button fx:id="btnAdd" onAction="#btnAddClickMeReaction">
+					<tooltip><Tooltip text="Add file to cloud" /></tooltip>
+				</Button>
+				<Button fx:id="btnLoad" onAction="#btnLoadClickMeReaction">
+					<tooltip><Tooltip text="Load file" /></tooltip>
+				</Button>
+				<Button fx:id="btnLoadAll" onAction="#btnLoadAllClickMeReaction">
+					<tooltip><Tooltip text="Load all files" /></tooltip>
+				</Button>
+	    	</VBox>
+	    	
+    </center>
+    
+    <right>
+    		<TableView fx:id="tableServer" >
+			      <columns>
+			        <!-- Колонки таблицы -->
+			        <TableColumn fx:id="labelServ" prefWidth="200" />
+			        <TableColumn fx:id="fileSizeServ" prefWidth="75" />
+			        <TableColumn fx:id="dateModifiedServ" prefWidth="200" />
+			      </columns>
+		    </TableView>
+    </right>
+
+	<bottom>
+		<VBox>
+			<ScrollPane fx:id="scrollPaneConsole" vbarPolicy="AS_NEEDED" fitToWidth="true" fitToHeight="true" >
+	            <TextFlow fx:id="textFlowConsole"/>
+        	</ScrollPane>
+			<HBox BorderPane.alignment="BOTTOM_CENTER">
+				<TextField fx:id="textField" onAction="#sendMsgClickMeReaction"
+					promptText="Введите сообщение..." prefHeight="35" HBox.hgrow="ALWAYS" />
+				<Button fx:id="sendMsg" onAction="#sendMsgClickMeReaction" text="Click Me!" />
+			</HBox>
+		</VBox>
+	</bottom>
+</BorderPane>

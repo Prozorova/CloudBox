@@ -1,0 +1,255 @@
+/* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
+
+.root {
+-fx-background-color: #FFF8DC;
+-fx-spacing: 2px;
+}
+
+.table-view {
+    -fx-pref-width: 475;
+    -fx-border-color: #141414, #7092BE, #eb94d0, #141414, #141414;
+    -fx-border-insets: 0, 2, 4, 0, 0;
+    -fx-background-color: transparent;
+    -fx-padding: 5px 3px 3px 5px;
+    -fx-font-family: "Arial";
+    -fx-font-size: 14
+}
+
+.table-view .column-header-background{
+    -fx-background-color: linear-gradient(to left, #C8CFD7, #141414);
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+.table-view .column-header-background .label{
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+}
+
+.table-row-cell{
+    -fx-background-color: transparent;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #7092BE;
+    -fx-background-insets: 0;
+    -fx-background-radius: 1;
+}
+
+.table-view > .virtual-flow > .scroll-bar:vertical,
+.table-view > .virtual-flow > .scroll-bar:vertical > .track,
+.table-view > .virtual-flow > .scroll-bar:vertical > .track-background, 
+.table-view > .virtual-flow > .scroll-bar:horizontal,
+.table-view > .virtual-flow > .scroll-bar:horizontal > .track,
+.table-view > .virtual-flow > .scroll-bar:horizontal > .track-background {
+    -fx-background-color: transparent;
+}
+
+#textFlowConsole {
+	-fx-pref-height: 100;
+	-fx-border-color: #141414, #7092BE, #eb94d0, #141414, #141414;
+    -fx-border-insets: 0, 2, 4, 0, 0;
+    -fx-background-color: #FFF8DC;
+    -fx-font-family: "Helvetica";
+    -fx-font-size: 12;
+    -fx-line-spacing: 5px;
+    -fx-padding: 5px 3px 3px 5px;
+}
+
+#cloudLabel {
+	-fx-graphic: url("Icons/label.png");
+}
+
+#vboxButtons {
+	-fx-padding: 25 0 25 0;
+}
+
+Hyperlink{
+    -fx-text-fill: DARKRED;
+}
+
+Hyperlink:hover{
+    -fx-text-fill: DARKGREY;
+}
+
+HBox {
+	-fx-padding: 2px;
+	-fx-spacing: 2px;
+}
+
+/* BUTTONS */
+.button {
+	-fx-background-color: linear-gradient(to top, #7092BE, #eb94d0); 
+	-fx-border-color: #141414;
+	
+	-fx-text-fill: #141414;
+	-fx-font-family: tahoma;
+	-fx-font-size: 14px;
+	
+	-fx-pref-height: 35px;
+    -fx-pref-width: 35px;
+    
+	-fx-background-size: 100% 100%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position:center; 
+    
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    
+    -fx-effect: dropshadow(three-pass-box, #666666, 5, 0, 2, 2);
+    
+}
+
+.button:hover {
+	-fx-border-color: #C8CFD7;
+	-fx-background-color: linear-gradient(to bottom, #7092BE, #eb94d0);
+}
+
+.button:pressed {
+	-fx-translate-y: 3;
+}
+
+#btnCopy {
+	-fx-background-image: url(Icons/copy.png);
+}
+
+#btnConnect {
+	-fx-background-image: url(Icons/connect.png);
+}
+
+#btnContacts {
+	-fx-background-image: url(Icons/contacts.png);
+}
+
+#btnDelete {
+	-fx-background-image: url(Icons/delete.png);
+}
+
+#btnExport {
+	-fx-background-image: url(Icons/export.png);
+}
+
+#btnImport {
+	-fx-background-image: url(Icons/import.png);
+}
+
+#btnHome {
+	-fx-background-image: url(Icons/home.png);
+}
+
+#btnLogOff {
+	-fx-background-image: url(Icons/logoff.png);
+}
+
+#btnNew {
+	-fx-background-image: url(Icons/new.png);
+}
+
+#btnProperties {
+	-fx-background-image: url(Icons/properties.png);
+}
+
+#btnShare {
+	-fx-background-image: url(Icons/share.png);
+}
+
+#btnAddAll {
+	-fx-background-image: url(Icons/addAll.png);
+}
+
+#btnAdd {
+	-fx-background-image: url(Icons/add.png);
+}
+
+#btnLoad {
+	-fx-background-image: url(Icons/load.png);
+}
+
+#btnLoadAll {
+	-fx-background-image: url(Icons/loadAll.png);
+}
+
+#sendMsg {
+    -fx-pref-width: 200px; 
+}
+
+
+/* MAIN MENU */
+.menu-bar {
+	-fx-background-color: linear-gradient(to left, #C8CFD7, #141414);
+	-fx-spacing: 17px;
+	
+}
+
+.menu-bar > .container > .menu-button > .label {
+    -fx-text-fill: #C8CFD7;
+    -fx-stroke-width:1;
+}
+
+.menu-bar > .container > .menu-button > .label:disabled {
+    -fx-opacity: 1.0;
+}
+
+.menu-bar > .container > .menu-button:hover,
+.menu-bar > .container > .menu-button:focused,
+.menu-bar > .container > .menu-button:showing {
+    -fx-background-color: #7092BE;
+}
+
+.menu-bar > .container > .menu-button:hover > .label,
+.menu-bar > .container > .menu-button:focused > .label,
+.menu-bar > .container > .menu-button:showing > .label {
+    -fx-text-fill: #141414;
+}
+
+.menu:focused {
+	-fx-text-fill: #141414;
+	-fx-background-color: #7092BE;
+}
+
+.menu {
+	-fx-text-fill: #ffffff;
+}
+
+/* MENU ITEM (children of a MENU BUTTON) */
+.menu-item {
+    -fx-background-color: linear-gradient(#383838, #141414); 
+    -fx-font-family:tahoma;
+	-fx-font-size: 12px;
+}
+
+
+.menu-item .label {
+    -fx-text-fill: #C8CFD7;
+}
+  
+.menu-item .label:disabled {
+    -fx-opacity: 1.0;
+}    
+  
+.menu-item:focused, .menu-item:hovered {
+    -fx-background-color: #7092BE; 
+}
+
+.menu-item:focused .label, .menu-item:hovered .label {
+    -fx-text-fill: #141414;
+}
+
+/* CONTEXT MENU */
+.context-menu {
+    -fx-background-color: #141414;
+	-fx-font-family: tahoma;
+}
+
+.tooltip {
+    -fx-text-fill: #C8CFD7;
+    -fx-background-color: #383838;
+    -fx-background-radius: 5px;
+    -fx-background-insets: 0;
+    -fx-effect: dropshadow(three-pass-box, #666666, 10, 0.0 , 0 , 3 );
+    -fx-font-size: 12px;
+}
+
+
