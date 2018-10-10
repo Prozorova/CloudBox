@@ -5,14 +5,16 @@ import java.net.URL;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.fx.SceneManager;
+
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.image.Image;
 
-
+/**
+ * Класс запускает клиентскую часть приложения
+ * @author prozorova 05.10.2018
+ */
 public class MainClientGUI extends Application {
 	
 	private static final Logger logger = Logger.getLogger(MainClientGUI.class);
@@ -20,15 +22,13 @@ public class MainClientGUI extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			Parent root = FXMLLoader.load(getClass().getResource("/CloudBoxAuth.fxml"));
-			Scene scene = new Scene(root,1000,700);
 			primaryStage.setTitle("CloudBox Client");
 			primaryStage.setMaxWidth(1000);
 			primaryStage.getIcons().add(new Image(getResource("/Icons/icon-16x16.png").toExternalForm()));
-			String css = this.getClass().getResource("/application.css").toExternalForm();
-			scene.getStylesheets().add(css);
-			primaryStage.setScene(scene);		
-			primaryStage.show();
+			
+			// создание экземпляра SceneManager и показ экрана авторизации
+			new SceneManager(this, primaryStage).changeScene(SceneManager.Scenes.AUTH);
+				
 		} catch(IOException e) {
 			logger.error("Loading GUI error: " + e.getMessage(), e);;
 		}

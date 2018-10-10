@@ -52,6 +52,11 @@ public class LabelWithInfo {
 		
 		this.label = new Label(file.getName(), imageView);
 	}
+	
+    public LabelWithInfo copyFile() throws IOException {
+    	LabelWithInfo copy = new LabelWithInfo(this.file);
+        return copy;
+    }
 
 	public Label getLabel() {
 		return label;
@@ -72,6 +77,10 @@ public class LabelWithInfo {
 			return fileSize / 1024 + "Kb";
 		else 
 			return fileSize / (1024 * 1024) + "Mb";
+	}
+	
+	public Long getFileSizeBytes() {
+		return fileSize;
 	}
 	
 	public StringProperty getSizeProperty() {

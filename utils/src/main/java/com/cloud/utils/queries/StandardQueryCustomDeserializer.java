@@ -1,0 +1,61 @@
+package com.cloud.utils.queries;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
+import com.cloud.utils.queries.json.JsonAuth;
+import com.cloud.utils.queries.json.JsonConfirm;
+import com.cloud.utils.queries.json.JsonResultAuth;
+import com.cloud.utils.queries.json.JsonSendFile;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+
+/**
+ * Десериализатор json - нужен для десериализации обобщенного
+ * типа StandardJsonQuery
+ * @author prozorova 10.10.2018
+ */
+public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJsonQuery> {
+
+	@Override
+	public StandardJsonQuery deserialize(JsonParser jp, DeserializationContext ctxt)
+			throws IOException, JsonProcessingException {
+		
+		Root root = jp.readValueAs(Root.class);
+		StandardJsonQuery jsonQuery = null;
+		
+		switch (root.queryType) {
+			case AUTH_DATA:
+				jsonQuery = new JsonAuth(root.standardParams.get(JsonAuth.PARAM_NAME_LOGIN), 
+						                 root.standardParams.get(JsonAuth.PARAM_NAME_PASS));
+				break;
+			case AUTH_RESULT:
+				jsonQuery = new JsonResultAuth(Boolean.parseBoolean(root.standardParams.get(JsonResultAuth.PARAM_NAME_ANSWER)));
+				break;
+			case SEND_FILE:
+				jsonQuery = new JsonSendFile(root.standardParams.get(JsonSendFile.PARAM_NAME_FILENAME), 
+						                     Long.parseLong(root.standardParams.get(JsonSendFile.PARAM_NAME_FILESIZE)),
+						                     root.standardParams.get(JsonSendFile.PARAM_NAME_CHECKSUM),
+						                     root.standardParams.get(JsonSendFile.PARAM_NAME_PATH));
+				break;
+			case CONFIRMATION:
+				jsonQuery = new JsonConfirm(root.standardParams.get(JsonConfirm.PARAM_NAME_ANSWER));
+				break;
+			default:
+				break;
+		}
+
+        return jsonQuery;
+	}
+	
+	// Аналогичен структуре StandardJsonQuery
+	private static class Root {
+		public StandardJsonQuery.QueryType queryType;
+		public Map<String, String> standardParams;
+		public Map<String, Set<String>> paramsWithSet;
+    }
+
+}

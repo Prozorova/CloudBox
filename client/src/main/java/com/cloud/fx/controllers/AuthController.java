@@ -1,13 +1,14 @@
-package com.cloud.fx;
+package com.cloud.fx.controllers;
 
 import java.net.URL;
-import java.util.LinkedHashMap;
 import java.util.ResourceBundle;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.CloudBoxClient;
-import com.cloud.utils.jsonQueries.StandardJsonQuery;
+import com.cloud.MessagesProcessor;
+import com.cloud.fx.Controller;
+import com.cloud.utils.queries.TransferMessage;
+import com.cloud.utils.queries.json.JsonAuth;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,8 +16,13 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
 
-public class AuthController implements Initializable {
+/**
+ * Осуществляет управление экраном аутентификации
+ * @author prozorova 05.10.2018
+ */
+public class AuthController extends Controller implements Initializable {
 	
 	private static final Logger logger = Logger.getLogger(AuthController.class);
 
@@ -29,6 +35,8 @@ public class AuthController implements Initializable {
 	@FXML TextField textFieldLogin;        // логин
 	@FXML TextField textFieldPass;         // пароль
 
+	@FXML BorderPane mainBorderPane;
+
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 	}
@@ -39,21 +47,10 @@ public class AuthController implements Initializable {
 	 */
 	@FXML public void btnLoginClickMeReaction() {
 		
-		StandardJsonQuery jsonQuary = new StandardJsonQuery(StandardJsonQuery.QueryType.AUTH_DATA, 
-															new LinkedHashMap<String, String>() {
-																{
-																put("login", textFieldLogin.getText());
-																put("password", textFieldPass.getText());
-																}
-															});
-		new Thread(() -> {
-			try {
-				CloudBoxClient.getInstance().start(jsonQuary);
-	
-			} catch (InterruptedException e) {
-				logger.error("Server connection failed: " + e.getMessage(), e);
-			}
-		}).run();
+		JsonAuth jsonQuery = new JsonAuth(textFieldLogin.getText(), textFieldPass.getText());
+		
+		MessagesProcessor.getProcessor().setController(this).sendData(new TransferMessage(jsonQuery));
+		
 	}
 
 	/**

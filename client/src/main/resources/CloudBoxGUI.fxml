@@ -15,7 +15,7 @@
 <?import javafx.scene.control.SeparatorMenuItem?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
-	fx:id="mainBorderPane" fx:controller="com.cloud.fx.Controller">
+	fx:id="mainBorderPane" fx:controller="com.cloud.fx.controllers.MainSceneController">
 
 	<top>
 		<VBox>
