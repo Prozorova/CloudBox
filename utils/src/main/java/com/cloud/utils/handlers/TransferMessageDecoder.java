@@ -59,11 +59,13 @@ public class TransferMessageDecoder  {
 	public static File recieveFile(ByteBuf in, int length, String filePath) throws IOException {
 		
 		Path path = Paths.get(filePath);
-		
+		try {
 		in.readBytes(Files.newOutputStream(path, 
 				                           StandardOpenOption.CREATE), 
 				     length);
-		
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 		return path.toFile();
 	}
 }

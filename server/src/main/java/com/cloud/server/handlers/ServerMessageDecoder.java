@@ -29,12 +29,14 @@ public class ServerMessageDecoder extends ByteToMessageDecoder{
 		
 		if (in.readBoolean()) {
 			int fileLength = in.readInt();
-			String path = DatabaseQueriesProcessor.getPath("") +       // путь к папке клиента
-					      ((JsonSendFile)jsonQuery).getFilePath() +    // путь внутри папки
+			String login = ((JsonSendFile)jsonQuery).getFileOwner();
+			String path = DatabaseQueriesProcessor.getInstance().getPath(login) + // путь к папке клиента
+					      ((JsonSendFile)jsonQuery).getFilePath() +               // путь внутри папки
 					      File.separator +
-					      ((JsonSendFile)jsonQuery).getFileName();     // имя файла
-			ctx.flush();
+					      ((JsonSendFile)jsonQuery).getFileName();                // имя файла
+			
 			file = TransferMessageDecoder.recieveFile(in, fileLength, path);
+			((JsonSendFile)jsonQuery).setFilePath(path);      // меняем путь к файлу на текущий на сервере
 		}
 		
 		out.add(new TransferMessage(jsonQuery).addFile(file));

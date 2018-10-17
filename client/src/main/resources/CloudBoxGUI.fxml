@@ -13,6 +13,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.Label?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
 	fx:id="mainBorderPane" fx:controller="com.cloud.fx.controllers.MainSceneController">
@@ -43,6 +44,9 @@
 			</MenuBar>
 			<HBox fx:id="btnGroup">
 			<!-- Панель инструментов -->
+			    <Button fx:id="btnNew" onAction="#btnNewClickMeReaction">
+					<tooltip><Tooltip text="New folder" /></tooltip>
+				</Button>
 				<Button fx:id="btnCopy" onAction="#btnCopyClickMeReaction">
 					<tooltip><Tooltip text="Copy" /></tooltip>
 				</Button>
@@ -67,9 +71,7 @@
 				<Button fx:id="btnLogOff" onAction="#btnLogOffClickMeReaction">
 					<tooltip><Tooltip text="Log Off" /></tooltip>
 				</Button>
-				<Button fx:id="btnNew" onAction="#btnNewClickMeReaction">
-					<tooltip><Tooltip text="New folder" /></tooltip>
-				</Button>
+				
 				<Button fx:id="btnProperties" onAction="#btnPropertiesClickMeReaction">
 					<tooltip><Tooltip text="Properties" /></tooltip>
 				</Button>
@@ -81,7 +83,9 @@
 	</top>
 	
 	<left>
-			<TableView fx:id="tableClient" >
+		<VBox >
+			<Label fx:id="lblClientPath" > </Label>
+			<TableView fx:id="tableClient" VBox.vgrow="ALWAYS" >
 			      <columns>
 			        <!-- Колонки таблицы -->
 			        <TableColumn fx:id="label" prefWidth="200" />
@@ -89,6 +93,7 @@
 			        <TableColumn fx:id="dateModified" prefWidth="200" />
 			      </columns>
 		    </TableView>
+		</VBox>
 	</left>
 	
     <center>
@@ -110,7 +115,9 @@
     </center>
     
     <right>
-    		<TableView fx:id="tableServer" >
+    	<VBox >
+			<Label fx:id="lblServerPath"  />
+    		<TableView fx:id="tableServer" VBox.vgrow="ALWAYS">
 			      <columns>
 			        <!-- Колонки таблицы -->
 			        <TableColumn fx:id="labelServ" prefWidth="200" />
@@ -118,6 +125,7 @@
 			        <TableColumn fx:id="dateModifiedServ" prefWidth="200" />
 			      </columns>
 		    </TableView>
+		</VBox>
     </right>
 
 	<bottom>

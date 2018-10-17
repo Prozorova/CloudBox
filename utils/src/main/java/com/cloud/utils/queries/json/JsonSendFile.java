@@ -93,5 +93,13 @@ public class JsonSendFile extends StandardJsonQuery {
 	public void setFileOwner(String owner) {
 		this.getStandardParams().put(PARAM_NAME_FILEOWNER, owner);
 	}
+	
+	/**
+	 * Задать путь к файлу
+	 * @param filePath путь к файлу
+	 */
+	public void setFilePath(String filePath) {
+		this.getStandardParams().put(PARAM_NAME_PATH, filePath);
+	}
 
 }

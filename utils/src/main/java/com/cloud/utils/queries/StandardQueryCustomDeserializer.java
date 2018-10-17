@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.queries.StandardJsonQuery.QueryType;
 import com.cloud.utils.queries.json.JsonAuth;
 import com.cloud.utils.queries.json.JsonConfirm;
 import com.cloud.utils.queries.json.JsonResultAuth;
@@ -29,11 +30,16 @@ public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJs
 		
 		switch (root.queryType) {
 			case AUTH_DATA:
-				jsonQuery = new JsonAuth(root.standardParams.get(JsonAuth.PARAM_NAME_LOGIN), 
+				jsonQuery = new JsonAuth(QueryType.AUTH_DATA,
+						                 root.standardParams.get(JsonAuth.PARAM_NAME_LOGIN), 
 						                 root.standardParams.get(JsonAuth.PARAM_NAME_PASS));
 				break;
 			case AUTH_RESULT:
-				jsonQuery = new JsonResultAuth(Boolean.parseBoolean(root.standardParams.get(JsonResultAuth.PARAM_NAME_ANSWER)));
+				boolean result = Boolean.parseBoolean(root.standardParams.get(JsonResultAuth.PARAM_NAME_ANSWER));
+				if (result)
+					jsonQuery = new JsonResultAuth(root.paramsWithSet.get(JsonResultAuth.PARAM_NAME_ROOT_FILES));
+				else
+					jsonQuery = new JsonResultAuth(root.standardParams.get(JsonResultAuth.PARAM_NAME_REJECT_REASON));
 				break;
 			case SEND_FILE:
 				jsonQuery = new JsonSendFile(root.standardParams.get(JsonSendFile.PARAM_NAME_FILENAME), 
@@ -42,8 +48,12 @@ public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJs
 						                     root.standardParams.get(JsonSendFile.PARAM_NAME_PATH));
 				break;
 			case CONFIRMATION:
-				jsonQuery = new JsonConfirm(root.standardParams.get(JsonConfirm.PARAM_NAME_ANSWER));
+				jsonQuery = new JsonConfirm(root.paramsWithSet.get(JsonConfirm.PARAM_NAME_DIR_FILES));
 				break;
+			case REG_DATA:
+				jsonQuery = new JsonAuth(QueryType.REG_DATA,
+						                 root.standardParams.get(JsonAuth.PARAM_NAME_LOGIN), 
+		                                 root.standardParams.get(JsonAuth.PARAM_NAME_PASS));
 			default:
 				break;
 		}

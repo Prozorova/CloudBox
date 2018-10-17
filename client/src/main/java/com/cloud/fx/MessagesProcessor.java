@@ -1,13 +1,16 @@
-package com.cloud;
+package com.cloud.fx;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.fx.Controller;
-import com.cloud.fx.SceneManager;
+import com.cloud.CloudBoxClient;
+import com.cloud.fx.controllers.MainSceneController;
 import com.cloud.utils.exep.IllegalDataException;
 import com.cloud.utils.queries.TransferMessage;
+
+import javafx.application.Platform;
 
 /**
  * Осуществляет отправку сообщений на сервер
@@ -45,24 +48,39 @@ public class MessagesProcessor {
 	/**
 	 * Обработать полученный от сервера результат аутентификации
 	 * @param isAuthPass пройдена ли проверка
+	 * @param files список файлов в корневом каталоге пользователя
+	 * @param reason 
 	 * @throws InterruptedException 
 	 */
-	public void login(boolean isAuthPass) throws InterruptedException {
-		// TODO добавть сообщение о некорректных данных
+	public void login(boolean isAuthPass, Set<String> files, String reason) throws InterruptedException {
+		
 		if (!isAuthPass) {
-			logger.debug("Authentication is failed!");
+			logger.debug("Authentication is failed: " + reason);
+			currentController.throwAlertMessage("Authorization failed", reason);
 			return;
 		}
 			
 		try {
 			// аутентификация пройдена, переключаем экран
 			logger.debug("Authentication is passed");
+			Controller.setServerFilesSet(files);
+			Controller.setLogin(user);
 			currentController = Controller.getSceneManager().changeScene(SceneManager.Scenes.MAIN_SCENE);
 		} catch (IOException e) {
 			logger.error("   Scene switching failed: " + e.getMessage(), e);
 		}
 	}
 	
+	/**
+	 * 
+	 * @param files
+	 */
+	public void refreshFilesOnServer(Set<String> files) {
+		Controller.setServerFilesSet(files);
+		Platform.runLater(() -> {
+			currentController.refresh();
+		});
+	}
 
 	public MessagesProcessor setController(Controller controller) {
 		this.currentController = controller;

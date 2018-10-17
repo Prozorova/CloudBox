@@ -32,7 +32,7 @@ public class ClientMessageDecoder extends ByteToMessageDecoder{
 			String path = MainSceneController.getFilePath() +           // путь к папке, куда сохранить файл
 					      File.separator +
 					      ((JsonSendFile)jsonQuery).getFileName();      // имя файла
-			ctx.flush();
+			
 			file = TransferMessageDecoder.recieveFile(in, fileLength, path);
 		}
 		

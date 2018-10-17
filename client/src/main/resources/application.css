@@ -15,17 +15,20 @@
     -fx-font-size: 14
 }
 
+.pathLabels {
+	-fx-background-color: linear-gradient(to left, #C8CFD7, #141414);
+	-fx-pref-height: 30px;
+	-fx-pref-width: 475;
+	-fx-padding: 5px 3px 3px 5px;
+    -fx-font-family: "Arial";
+    -fx-font-size: 18;
+    -fx-text-fill: #ffffff;
+}
+
 .table-view .column-header-background{
-    -fx-background-color: linear-gradient(to left, #C8CFD7, #141414);
-}
-
-.table-view .column-header {
-    -fx-background-color: transparent;
-}
-
-.table-view .column-header-background .label{
-    -fx-background-color: transparent;
-    -fx-text-fill: white;
+	-fx-max-height: 1px;
+	-fx-min-height: 1px;
+	-fx-pref-height: 1px;
 }
 
 .table-row-cell{

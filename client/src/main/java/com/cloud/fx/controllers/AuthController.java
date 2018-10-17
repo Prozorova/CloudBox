@@ -5,8 +5,9 @@ import java.util.ResourceBundle;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.MessagesProcessor;
 import com.cloud.fx.Controller;
+import com.cloud.fx.MessagesProcessor;
+import com.cloud.utils.queries.StandardJsonQuery.QueryType;
 import com.cloud.utils.queries.TransferMessage;
 import com.cloud.utils.queries.json.JsonAuth;
 
@@ -47,16 +48,31 @@ public class AuthController extends Controller implements Initializable {
 	 */
 	@FXML public void btnLoginClickMeReaction() {
 		
-		JsonAuth jsonQuery = new JsonAuth(textFieldLogin.getText(), textFieldPass.getText());
+		JsonAuth jsonQuery = new JsonAuth(QueryType.AUTH_DATA, textFieldLogin.getText(), textFieldPass.getText());
 		
 		MessagesProcessor.getProcessor().setController(this).sendData(new TransferMessage(jsonQuery));
+		
+		clearTextFields();
 		
 	}
 
 	/**
 	 * отправить новые данные для аутентификации
 	 */
-	@FXML public void btnbtnSendAuthClickMeReaction() {}
+	@FXML public void btnbtnSendAuthClickMeReaction() {
+		
+		if (textFieldPass.getText().equals(textFieldPassConfirm.getText())) {
+			
+			JsonAuth jsonQuery = new JsonAuth(QueryType.REG_DATA, textFieldLogin.getText(), textFieldPass.getText());
+		
+			MessagesProcessor.getProcessor().setController(this).sendData(new TransferMessage(jsonQuery));
+			
+			clearTextFields();
+		} else {
+			textFieldPass.setStyle("-fx-text-inner-color: red;");
+			textFieldPassConfirm.setStyle("-fx-text-inner-color: red;");
+		}
+	}
 
 	/**
 	 * зарегистрировать нового пользователя
@@ -71,8 +87,7 @@ public class AuthController extends Controller implements Initializable {
 				                  btnSendAuth,
 				                  btnLoginWithoutReg);
 		
-		textFieldLogin.requestFocus();
-		textFieldPassConfirm.clear();
+		clearTextFields();
 	}
 
 	/**
@@ -88,9 +103,17 @@ public class AuthController extends Controller implements Initializable {
 		switchAvailability(true,  btnLogin, 
                                   btnReg);
 		
+		clearTextFields();
+	}
+	
+	private void clearTextFields() {
 		textFieldLogin.clear();
 		textFieldLogin.requestFocus();
 		textFieldPass.clear();
+		textFieldPassConfirm.clear();
+		
+		textFieldPass.setStyle("-fx-text-inner-color: black;");
+		textFieldPassConfirm.setStyle("-fx-text-inner-color: black;");
 	}
 
 

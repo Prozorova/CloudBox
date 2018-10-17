@@ -9,21 +9,20 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.MessagesProcessor;
 import com.cloud.fx.Controller;
+import com.cloud.fx.MessagesProcessor;
 import com.cloud.fx.components.LabelWithInfo;
+import com.cloud.fx.components.LabelWithInfo.FileType;
 import com.cloud.logger.ClientConsoleLogAppender;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.TransferMessage;
 import com.cloud.utils.queries.json.JsonSendFile;
 
-import io.netty.channel.SelectStrategy;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -39,9 +38,11 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.DirectoryChooser;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.control.TableColumn;
 
@@ -53,8 +54,10 @@ public class MainSceneController extends Controller implements Initializable {
 	
 	private static final Logger logger = Logger.getLogger(MainSceneController.class);
 
-    public static final String DIR_FOR_TESTING_CLIENT = "/Users/prozorova/Documents/icons/111";
-    private static final String DIR_FOR_TESTING_SERVER = "/Users/prozorova/Documents/icons/222";
+	private static final String DEF_SERVER_DIR = "Server/";
+	
+	private String currentDirClient;
+	private String currentDirServer;
     
 	// для регулирования обработки - на сервере или на клиенте
 	enum FilesSource {SERVER, CLIENT};
@@ -71,19 +74,23 @@ public class MainSceneController extends Controller implements Initializable {
 	@FXML private BorderPane mainBorderPane;
 	
 	// CLIENT TABLEVIEW
+	@FXML private Label lblClientPath;
 	@FXML private TableView<LabelWithInfo> tableClient;
 	@FXML private TableColumn<LabelWithInfo, Label> label;
 	@FXML private TableColumn<LabelWithInfo, String> fileSize;
-	@FXML private TableColumn<LabelWithInfo, FileTime> dateModified;
+	@FXML private TableColumn<LabelWithInfo, String> dateModified;
 
 	// SERVER TABLEVIEW
+	@FXML private Label lblServerPath;
 	@FXML private TableView<LabelWithInfo> tableServer;
 	@FXML private TableColumn<LabelWithInfo, Label> labelServ;
 	@FXML private TableColumn<LabelWithInfo, String> fileSizeServ;
-	@FXML private TableColumn<LabelWithInfo, FileTime> dateModifiedServ;
+	@FXML private TableColumn<LabelWithInfo, String> dateModifiedServ;
 	
+	// текущие элементы в таргете
 	private LabelWithInfo currentTargetClient;
 	private LabelWithInfo currentTargetServer;
+	
     
     @Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -97,24 +104,30 @@ public class MainSceneController extends Controller implements Initializable {
     	// устанавливаем тип и значение которое должно хранится в колонке
     	label.setCellValueFactory(cellData -> cellData.getValue().getLabelProperty()); 
     	fileSize.setCellValueFactory(cellData -> cellData.getValue().getSizeProperty());
-    	dateModified.setCellValueFactory(cellData -> cellData.getValue().getDateModProperty());
+    	dateModified.setCellValueFactory(cellData -> cellData.getValue().getDateModifiedProperty());
     	
     	labelServ.setCellValueFactory(cellData -> cellData.getValue().getLabelProperty()); 
     	fileSizeServ.setCellValueFactory(cellData -> cellData.getValue().getSizeProperty());
-    	dateModifiedServ.setCellValueFactory(cellData -> cellData.getValue().getDateModProperty());
+    	dateModifiedServ.setCellValueFactory(cellData -> cellData.getValue().getDateModifiedProperty());
     	
-    	// переопределяем компаратор, чтобы каталоги всегда были в начале списка
+    	// переопределяем компаратор для сетов, чтобы каталоги всегда были в начале списка
 		comp = new Comparator<LabelWithInfo>() {
 			@Override
 			public int compare(LabelWithInfo label1, LabelWithInfo label2) {
-				if (label1.getFile().isDirectory() && !label2.getFile().isDirectory())
+				if (label1.getFileType() == FileType.DIRECTORY && label2.getFileType() == FileType.FILE)
 					return -1;
-				else if (label1.getFile().isDirectory() && !label2.getFile().isDirectory())
+				else if (label1.getFileType() == FileType.FILE && label2.getFileType() == FileType.DIRECTORY)
 					return 1;
 				else
-					return label1.getFile().getName().compareTo(label2.getFile().getName());
+					return label1.getFileName().compareTo(label2.getFileName());
 			}
 		};
+		
+		refresh();
+		lblServerPath.setText(DEF_SERVER_DIR);
+		lblClientPath.getStyleClass().add("pathLabels");
+		lblServerPath.getStyleClass().add("pathLabels");
+		
 	}
 
 	/*
@@ -155,51 +168,83 @@ public class MainSceneController extends Controller implements Initializable {
 	@FXML public void btnShareClickMeReaction() {}
 
 
-	/**
-	 * сейчас используется для тестирования - показывает файлы в папках, 
-	 * позволяет имитировать работу дропбокса: можно перекидывать файлы
-	 * с клиента на сервер (осуществляется реальное клиент-серверное
-	 * взаимодействие и копирование файла)
-	 * @throws IOException
-	 */
+	
 	@FXML public void btnConnectClickMeReaction() throws IOException {
-		
-		this.filesOnClient = gatherFilesFromDir(Paths.get(DIR_FOR_TESTING_CLIENT), FilesSource.CLIENT);
-		this.filesOnServer = gatherFilesFromDir(Paths.get(DIR_FOR_TESTING_SERVER), FilesSource.SERVER);
-   	
-		showFilesInDir(FilesSource.CLIENT);
-		showFilesInDir(FilesSource.SERVER);
 	}
 	
 	/**
 	 * Собрать все файлы из папки в отсортированный список
 	 * @param path путь к папке
-	 * @return отсортированный список файлов с типами
+	 * @return отсортированный список файлов с доп. информацией
+	 * @throws IOException 
 	 */
-	private Set<LabelWithInfo> gatherFilesFromDir(Path path, FilesSource filesSource) throws IOException {
+	private Set<LabelWithInfo> gatherFilesInDirClient(Path path) throws IOException {
 		
-		Iterator<Path> iterator = Files.newDirectoryStream(path).iterator();
+		Set<LabelWithInfo> filesSet = new TreeSet<>(comp);
 		
-		Set<LabelWithInfo> filesSet = new TreeSet<LabelWithInfo>(comp);
-		logger.debug("List of files in directory " + path + ":");
-		
-		while (iterator.hasNext()) {
-			File file = iterator.next().toFile();
-			
-			// убираем из списка папку, в которой проверяем файлы
-			if (path.equals(file.toPath()))
-				continue;
+		Files.newDirectoryStream(path, filePath -> !filePath.equals(path))
+	     .forEach(new Consumer<Path>() {
 
-			logger.debug("   - " + file);
-			
-			LabelWithInfo myLabel = new LabelWithInfo(file);
-			
-			// инициализация поведения и добавление в список
-			initializeDragAndDropLabel(myLabel.getLabel());
-			initializeDragAndDropDone(myLabel, filesSource);
-			filesSet.add(myLabel);
-		}
+			@Override
+			public void accept(Path filePath) {
+				try {
+					LabelWithInfo myLabel = new LabelWithInfo(filePath.toFile());
+
+					// инициализация поведения и добавление в список
+					initializeBehaviorLabel(myLabel, FilesSource.CLIENT);
+					filesSet.add(myLabel);
+					
+				} catch (IOException e) {
+					logger.error("Creation LabelWithInfo object for "+filePath.toFile()+" failed: " + e.getMessage(), e);
+				}
+			}
+		});
 		return filesSet;
+	}
+	
+	/**
+	 * Собрать список файлов, полученный от сервера, в отсортированный список LabelWithInfo
+	 * @param set список файлов, полученный от сервера
+	 * @return отсортированный список файлов с доп. информацией
+	 */
+	private Set<LabelWithInfo> gatherFilesInDirServer(Set<String> set) {
+		
+		Set<LabelWithInfo> filesSet = new TreeSet<>(comp);
+		
+		set.stream().forEach(new Consumer<String>() {
+
+			@Override
+			public void accept(String fileInfo) {
+				
+				LabelWithInfo myLabel = null;
+				try {
+					// парсим информацию о файле
+					String[] fileAttribute = fileInfo.split(", ");
+					String fileName = fileAttribute[0];
+					long   fileSize = Long.parseLong(fileAttribute[1]);
+					long   modMills = Long.parseLong(fileAttribute[2]);
+					boolean   isDir = Boolean.parseBoolean(fileAttribute[3]);
+					
+					myLabel = new LabelWithInfo(fileName, fileSize, modMills, isDir);
+				} catch (Exception e) {
+					logger.error("Incorrect format of file information recieved from server: " + e.getMessage(), e);
+				}
+
+				if (myLabel != null) {
+					// инициализация поведения и добавление в список
+					initializeBehaviorLabel(myLabel, FilesSource.CLIENT);
+					filesSet.add(myLabel);
+				} else
+					logger.error("file "+fileInfo+" skipped");
+			}
+		});
+		return filesSet;
+	}
+	
+	@Override
+	public void refresh() {
+		this.filesOnServer = gatherFilesInDirServer(getFilesOnServer());
+		showFilesInDir(FilesSource.SERVER);
 	}
 	
 	/**
@@ -213,6 +258,18 @@ public class MainSceneController extends Controller implements Initializable {
 		// где отрисовывать
 		TableView<LabelWithInfo> tableView;
 		
+		// задать элемент перехода на уровень выше
+		LabelWithInfo rootLabel = new LabelWithInfo();
+		rootLabel.getLabel().setOnMouseClicked(event -> {
+			if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
+				if (source == FilesSource.CLIENT) 
+					changeFolderClient(Paths.get(currentDirClient).getParent());
+
+				else //TODO
+					System.out.println("Double clicked");
+			}
+		});
+		
 		if (source.equals(FilesSource.CLIENT)) {
 			files = this.filesOnClient;
 			tableView = this.tableClient;
@@ -223,6 +280,7 @@ public class MainSceneController extends Controller implements Initializable {
 		
 		tableView.getItems().clear();
 		
+		filesInDir.add(rootLabel);
 		filesInDir.addAll(files);
 		
 		tableView.setItems(filesInDir);
@@ -230,11 +288,35 @@ public class MainSceneController extends Controller implements Initializable {
 	}
 	
 	/**
-	 * задаем параметры отображаемых элементов каталога
-	 * @param label элемент каталога
+	 * сменить отображаемую папку на клиенте
+	 * @param pathToFolder путь к папке
 	 */
-	private void initializeDragAndDropLabel(Label label) {
+	private void changeFolderClient (Path pathToFolder) {
+		if (pathToFolder == null)
+			return;
+		currentTargetClient = null;
+		
+		try {
+	    	// собрать и отобразить все файлы в выбранной папке
+	    	this.filesOnClient = gatherFilesInDirClient(pathToFolder);
+	    	showFilesInDir(FilesSource.CLIENT);
+	    	
+	    	currentDirClient = pathToFolder.toString();
+	    	lblClientPath.setText(currentDirClient);
 
+	    } catch (IOException e) {
+	    	logger.error("Opening "+pathToFolder+" directory is failed: " + e.getMessage(), e);
+	    }
+	}
+	
+	/**
+	 * задаем поведение отображаемых элементов
+	 * @param file элемент каталога
+	 * @param filesSource клиент или сервер
+	 */
+	private void initializeBehaviorLabel(LabelWithInfo file, FilesSource filesSource) {
+		Label label = file.getLabel();
+		
 		label.setOnDragDetected(event -> {
 			Dragboard db = label.startDragAndDrop(TransferMode.COPY);
 			ClipboardContent content = new ClipboardContent();
@@ -250,10 +332,8 @@ public class MainSceneController extends Controller implements Initializable {
 			}
 			event.consume();
 		});
-	}
-	
-	private void initializeDragAndDropDone(LabelWithInfo file, FilesSource filesSource) {
-		file.getLabel().setOnDragDone(event -> {
+		
+		label.setOnDragDone(event -> {
 			Dragboard db = event.getDragboard();
 			
 			double mouseX = MouseInfo.getPointerInfo().getLocation().getX();
@@ -273,18 +353,30 @@ public class MainSceneController extends Controller implements Initializable {
 			}
 			event.consume();
 		});
-		
 
-		file.getLabel().setOnMouseClicked(event -> {
-			EventTarget eventTarget = event.getTarget();
-			logger.debug("Clicked: " + eventTarget);
-			if (filesSource == FilesSource.CLIENT) 
-				currentTargetClient = file;
-			else 
-				currentTargetServer = file;
+		label.setOnMouseClicked(event -> {
+			// если кликнули по элементу левой кнокой мыши
+			if (event.getButton().equals(MouseButton.PRIMARY)) {
+				
+				EventTarget eventTarget = event.getTarget();
+				logger.debug("Clicked: " + eventTarget);
+				
+				if (filesSource == FilesSource.CLIENT) 
+					currentTargetClient = file;
+				else 
+					currentTargetServer = file;
+				
+				// двойное нажатие на значок директории
+				if (event.getClickCount() == 2 && file.getFileType() == FileType.DIRECTORY) {
+					
+					if (filesSource == FilesSource.CLIENT) 
+						changeFolderClient(file.getFile().toPath());
+					else 
+						System.out.println("Double clicked - SERVER");
+				}
+			}
 		});
 	}
-
 
 	/**
 	 * скопировать файл
@@ -295,25 +387,18 @@ public class MainSceneController extends Controller implements Initializable {
 	private void copyFile(LabelWithInfo file, FilesSource fromfilesSource, FilesSource tofilesSource) {
 		Set<LabelWithInfo> destSet = (tofilesSource == FilesSource.CLIENT ? filesOnClient : filesOnServer);
 
-		try {
-			StandardJsonQuery jsonQuery = new JsonSendFile(file.getFile().getName(),
-					                                       file.getFileSizeBytes(),
-					                                       "***",    // Check sum   ???
-					                                       "");      // TODO path
-			if (tofilesSource == FilesSource.CLIENT)
-				// TODO зашить реальный путь
-				filePath = DIR_FOR_TESTING_CLIENT;
-			
-			MessagesProcessor.getProcessor().sendData(new TransferMessage(jsonQuery).addFile(file.getFile()));
-			
-			destSet.add(file.copyFile());
-			
-			// перерисовываем файлы - актуально только в случае успешного копирования
-			showFilesInDir(tofilesSource);
-		} catch (IOException e) {
-			logger.error("Copying file is failed: " + e.getMessage(), e);
-		}
+		StandardJsonQuery jsonQuery = new JsonSendFile(file.getFileName(),
+				                                       file.getFileSizeBytes(),
+													   "***",    // Check sum   ???
+													   currentDirServer);      // TODO path
+		//			if (tofilesSource == FilesSource.CLIENT)
+		//				filePath = currentDirClient;
+
+		MessagesProcessor.getProcessor().sendData(new TransferMessage(jsonQuery).addFile(file.getFile()));
+
 	}
+	
+	
 
 	@FXML public void btnCopyClickMeReaction() {}
 
@@ -330,13 +415,36 @@ public class MainSceneController extends Controller implements Initializable {
 	@FXML public void btnImportClickMeReaction() {}
 
 
-	@FXML public void btnHomeClickMeReaction() {}
+	/**
+	 * перейти в свой корневой каталог
+	 */
+	@FXML public void btnHomeClickMeReaction() {
+		this.currentDirServer = DEF_SERVER_DIR;
+		this.filesOnServer = gatherFilesInDirServer(this.getFilesOnServer());
+		showFilesInDir(FilesSource.SERVER);
+		lblServerPath.setText(DEF_SERVER_DIR);
+	}
 
 
 	@FXML public void btnLogOffClickMeReaction() {}
 
 
-	@FXML public void btnNewClickMeReaction() {}
+	/**
+	 * Открыть для просмотра директорию для начала работы на клиенте
+	 * сейчас используется для тестирования - показывает файлы в папках, 
+	 * позволяет имитировать работу дропбокса: можно перекидывать файлы
+	 * с клиента на сервер (осуществляется реальное клиент-серверное
+	 * взаимодействие и копирование файла)
+	 * @throws IOException
+	 */
+	@FXML public void btnNewClickMeReaction() {
+		DirectoryChooser directoryChooser = new DirectoryChooser();
+		directoryChooser.setTitle("Open Resource Folder");
+		File selectedDir = directoryChooser.showDialog(mainBorderPane.getScene().getWindow());
+		
+		 if (selectedDir != null && selectedDir.isDirectory())
+			 changeFolderClient(selectedDir.toPath());
+	}
 
 
 	@FXML public void btnPropertiesClickMeReaction() {}
@@ -363,7 +471,8 @@ public class MainSceneController extends Controller implements Initializable {
 	}
 	
 	private static String filePath;
-	
+
+
 	public static String getFilePath() {
 		return filePath;
 		

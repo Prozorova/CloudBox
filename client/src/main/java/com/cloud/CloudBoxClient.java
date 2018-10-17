@@ -2,6 +2,7 @@ package com.cloud;
 
 import java.net.InetSocketAddress;
 
+import com.cloud.fx.MessagesProcessor;
 import com.cloud.handlers.ClientChannelInboundHandlerAdapter;
 import com.cloud.handlers.ClientMessageDecoder;
 import com.cloud.utils.exep.IllegalDataException;
@@ -41,12 +42,12 @@ public class CloudBoxClient {
 	 * @throws IllegalDataException
 	 * @throws InterruptedException
 	 */
-    public static CloudBoxClient getCloudBoxClient(TransferMessage auth, MessagesProcessor processor) 
+    public static CloudBoxClient getCloudBoxClient(TransferMessage data, MessagesProcessor processor) 
     		throws IllegalDataException, InterruptedException {
 		if (client == null) {
 			client = new CloudBoxClient();
 		}
-		client.start(auth, processor);
+		client.start(data, processor);
         return client;
     }
 	

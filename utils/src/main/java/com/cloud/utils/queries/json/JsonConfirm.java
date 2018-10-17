@@ -1,6 +1,7 @@
 package com.cloud.utils.queries.json;
 
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -12,25 +13,41 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class JsonConfirm extends StandardJsonQuery {
 	
 	public static final String PARAM_NAME_ANSWER = "confirmation";
+	public static final String PARAM_NAME_DIR_FILES = "filesInDir";
 
 	/**
-	 * конструктор
+	 * конструктор в случае успешной передачи файла
 	 * @param answer результат
 	 */
-	public JsonConfirm(String answer) {
+	@SuppressWarnings("serial")
+	public JsonConfirm(Set<String> files) {
 		super(QueryType.CONFIRMATION, 
 			  new LinkedHashMap<String, String>() {
 				{
-					put(PARAM_NAME_ANSWER, answer);
+					put(PARAM_NAME_ANSWER, "true");
 				}
 			  });
+		this.setParamsWithSet(new LinkedHashMap<String, Set<String>>() {
+			{
+				put(PARAM_NAME_DIR_FILES, files);
+			}
+		});
 	}
 
 	/**
 	 * Получить результат (подтверждение)
 	 */
 	@JsonIgnore
-	public String getConfirmation() {
-		return this.getStandardParams().get(PARAM_NAME_ANSWER);
+	public boolean getConfirmation() {
+		return this.getStandardParams().get(PARAM_NAME_ANSWER).equals("true");
+	}
+	
+	/**
+	 * получить список файлов в текущем каталоге пользователя
+	 * @return список файлов
+	 */
+	@JsonIgnore
+	public Set<String> getFiles() {
+		return this.getParamsWithSet() == null ? null : this.getParamsWithSet().get(PARAM_NAME_DIR_FILES);
 	}
 }

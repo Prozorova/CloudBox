@@ -20,8 +20,8 @@ public class JsonAuth extends StandardJsonQuery {
 	 * @param login логин
 	 * @param pass пароль
 	 */
-	public JsonAuth(String login, String pass) {
-		super(QueryType.AUTH_DATA,
+	public JsonAuth(QueryType type, String login, String pass) {
+		super(type == QueryType.REG_DATA ? QueryType.REG_DATA : QueryType.AUTH_DATA,
 			  new LinkedHashMap<String, String>(){
 				{
 					put(PARAM_NAME_LOGIN, login);

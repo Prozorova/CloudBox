@@ -1,6 +1,5 @@
 package com.cloud.server;
 
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.handlers.ServerMessageDecoder;
@@ -30,7 +29,6 @@ public class CloudBoxServer {
 	private static final String      INET_HOST = "localhost";	
 
 	public void start() throws Exception {
-		BasicConfigurator.configure();    // для работы логгера на сервере
 		
 		EventLoopGroup bossGroup = new NioEventLoopGroup();
 		EventLoopGroup workerGroup = new NioEventLoopGroup();

@@ -1,7 +1,8 @@
 package com.cloud.handlers;
 
-import com.cloud.MessagesProcessor;
+import com.cloud.fx.MessagesProcessor;
 import com.cloud.utils.queries.TransferMessage;
+import com.cloud.utils.queries.json.JsonConfirm;
 import com.cloud.utils.queries.json.JsonResultAuth;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -20,10 +21,10 @@ public class ClientChannelInboundHandlerAdapter extends ChannelInboundHandlerAda
 	private MessagesProcessor processor;
 	
 	public ClientChannelInboundHandlerAdapter(SocketChannel currentChannel, 
-			                                  TransferMessage authMsg,
+			                                  TransferMessage data,
 			                                  MessagesProcessor processor) {
 		super();
-		this.authMsg = authMsg;
+		this.authMsg = data;
 		this.processor = processor;
 	}
 
@@ -42,11 +43,14 @@ public class ClientChannelInboundHandlerAdapter extends ChannelInboundHandlerAda
 				
 				break;
 			case AUTH_RESULT:
-				JsonResultAuth json = (JsonResultAuth)read.getJsonQuery();
-				processor.login(json.getAuthResult());
+				JsonResultAuth jsonAuth = (JsonResultAuth)read.getJsonQuery();
+				processor.login(jsonAuth.getAuthResult(), jsonAuth.getFiles(), jsonAuth.getReason());
 				break;
 			case SEND_FILE:
 				break;
+			case CONFIRMATION:
+				JsonConfirm jsonConfirm = (JsonConfirm)read.getJsonQuery();
+				
 			default:
 				break;
     	}

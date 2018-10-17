@@ -23,6 +23,7 @@ public abstract class StandardJsonQuery  {
 					AUTH_RESULT,   // ответ сервера на запрос аутентификации
 					SEND_FILE,     // передать файл
 					CONFIRMATION,  // подтверждение, напр. о получении файла
+					REG_DATA       // регистрация нового пользователя
 		};
 	
 	private QueryType queryType;
@@ -38,17 +39,17 @@ public abstract class StandardJsonQuery  {
 	public StandardJsonQuery() {
 	}
 	
+	protected StandardJsonQuery(QueryType queryType,
+			                    Map<String, String> parameters) {
+		this(queryType, parameters, null);
+	}
+	
 	protected StandardJsonQuery(QueryType queryType, 
-			                    Map<String, String> parameters, 
+			                    Map<String, String> parameters,
 			                    Map<String, Set<String>> paramsWithSet) {
 		this.queryType = queryType;
 		this.standardParams = parameters;
 		this.paramsWithSet = paramsWithSet;
-	}
-	
-	protected StandardJsonQuery(QueryType queryType, 
-			                    Map<String, String> parameters) {
-		this(queryType, parameters, null);
 	}
 
 	
@@ -66,8 +67,8 @@ public abstract class StandardJsonQuery  {
 		return standardParams;
 	}
 
-	protected void setStandardParams(Map<String, String> standartParams) {
-		this.standardParams = standartParams;
+	protected void setStandardParams(Map<String, String> standardParams) {
+		this.standardParams = standardParams;
 	}
 
 	protected Map<String, Set<String>> getParamsWithSet() {

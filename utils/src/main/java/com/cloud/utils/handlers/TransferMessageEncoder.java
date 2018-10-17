@@ -18,6 +18,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
  */
 public class TransferMessageEncoder extends MessageToByteEncoder<TransferMessage> {
 
+	int buf = 1024 *1024 * 100;
 	// для работы с json
 	private static ObjectMapper mapper = new ObjectMapper();
 
@@ -54,7 +55,11 @@ public class TransferMessageEncoder extends MessageToByteEncoder<TransferMessage
 			
 			// передаем файл
 			out.writeInt((int)file.length());
+			try {
 			out.writeBytes(Files.newInputStream(file.toPath()), (int)file.length());
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
