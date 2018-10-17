@@ -36,7 +36,6 @@ public class ClientChannelInboundHandlerAdapter extends ChannelInboundHandlerAda
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		
-		ctx.flush();
 		TransferMessage read = (TransferMessage)msg;
     	switch (read.getJsonQuery().getQueryType()) {
 			case AUTH_DATA:
@@ -50,11 +49,12 @@ public class ClientChannelInboundHandlerAdapter extends ChannelInboundHandlerAda
 				break;
 			case CONFIRMATION:
 				JsonConfirm jsonConfirm = (JsonConfirm)read.getJsonQuery();
-				
+				if (jsonConfirm.getConfirmation())
+					processor.refreshFilesOnServer(jsonConfirm.getFiles());
+				else
+					processor.showAlert("Error", "File transmitting failed");
 			default:
 				break;
     	}
-    	
-    	
 	}
 }

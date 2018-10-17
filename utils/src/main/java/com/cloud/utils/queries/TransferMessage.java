@@ -14,6 +14,8 @@ public class TransferMessage {
 	// передаваемый файл
 	private File file = null;
 	
+	public static final String DIVIDER = " ## ";
+	
 	/**
 	 * конструктор для передачи только служебной информации
 	 * @param jsonQuery

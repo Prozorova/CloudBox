@@ -57,7 +57,7 @@ public class MainSceneController extends Controller implements Initializable {
 	private static final String DEF_SERVER_DIR = "Server/";
 	
 	private String currentDirClient;
-	private String currentDirServer;
+	private String currentDirServer = "";
     
 	// для регулирования обработки - на сервере или на клиенте
 	enum FilesSource {SERVER, CLIENT};
@@ -219,7 +219,7 @@ public class MainSceneController extends Controller implements Initializable {
 				LabelWithInfo myLabel = null;
 				try {
 					// парсим информацию о файле
-					String[] fileAttribute = fileInfo.split(", ");
+					String[] fileAttribute = fileInfo.split(TransferMessage.DIVIDER);
 					String fileName = fileAttribute[0];
 					long   fileSize = Long.parseLong(fileAttribute[1]);
 					long   modMills = Long.parseLong(fileAttribute[2]);

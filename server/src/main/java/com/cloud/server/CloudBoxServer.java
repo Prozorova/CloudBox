@@ -48,12 +48,14 @@ public class CloudBoxServer {
 									pipeline.addLast(new TransferMessageHandler());
 								}
 							})
+					       .option(ChannelOption.SO_BACKLOG, 100)
+					       .option(ChannelOption.TCP_NODELAY, true)
 					       .childOption(ChannelOption.SO_KEEPALIVE, true)
-							.bind(INET_HOST, INET_PORT_NUMBER)
-				            .sync()
-				            .channel()
-				            .closeFuture()	
-				            .syncUninterruptibly();
+					       .bind(INET_HOST, INET_PORT_NUMBER)
+				           .sync()
+				           .channel()
+				           .closeFuture()	
+				           .syncUninterruptibly();
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

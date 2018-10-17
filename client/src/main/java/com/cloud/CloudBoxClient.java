@@ -10,6 +10,7 @@ import com.cloud.utils.handlers.TransferMessageEncoder;
 import com.cloud.utils.queries.TransferMessage;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -29,6 +30,7 @@ public class CloudBoxClient {
 	private static final int  INET_PORT_NUMBER = 8189;
 	private static final String      INET_HOST = "localhost";
 	
+	private Channel currentChannel;
 	
 	private static CloudBoxClient client = null;
 	
@@ -44,10 +46,14 @@ public class CloudBoxClient {
 	 */
     public static CloudBoxClient getCloudBoxClient(TransferMessage data, MessagesProcessor processor) 
     		throws IllegalDataException, InterruptedException {
-		if (client == null) {
+		if (client == null)
 			client = new CloudBoxClient();
-		}
-		client.start(data, processor);
+		
+		if (client.currentChannel == null || !client.currentChannel.isActive())
+			client.start(data, processor);
+		else
+			client.sendData(data);
+		
         return client;
     }
 	
@@ -68,18 +74,24 @@ public class CloudBoxClient {
                                     pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
                                     pipeline.addLast(new TransferMessageEncoder());
                                     pipeline.addLast(new ClientChannelInboundHandlerAdapter(socketChannel, data, processor));
+                                    
+                                    currentChannel = socketChannel;
                                 }
                            });
+			
 			ChannelFuture future = clientBootstrap.remoteAddress(new InetSocketAddress(INET_HOST, INET_PORT_NUMBER))
                                                   .connect()
                                                   .sync();
 			
 			future.channel().closeFuture().sync();
-//			future.awaitUninterruptibly().sync();
 
         } finally {
         	workerGroup.shutdownGracefully();
         }
+	}
+	
+	private void sendData(TransferMessage data) {
+		currentChannel.writeAndFlush(data);
 	}
 
 }

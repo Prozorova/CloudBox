@@ -12,7 +12,6 @@ import com.cloud.utils.queries.json.JsonAuth;
 import com.cloud.utils.queries.json.JsonConfirm;
 import com.cloud.utils.queries.json.JsonSendFile;
 
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -40,7 +39,7 @@ public class TransferMessageHandler extends SimpleChannelInboundHandler<Transfer
 			case SEND_FILE:     // получен файл от пользователя, отправляем подтверждение
 				Path path = Paths.get(((JsonSendFile)msg.getJsonQuery()).getFilePath()).getParent();
 				StandardJsonQuery json = new JsonConfirm(filesProcessor.gatherFilesFromDir(path));
-				ctx.writeAndFlush(new TransferMessage(json)).addListener(ChannelFutureListener.CLOSE);
+				ctx.writeAndFlush(new TransferMessage(json)); 
 				break;
 			
 				
@@ -54,4 +53,25 @@ public class TransferMessageHandler extends SimpleChannelInboundHandler<Transfer
 		cause.printStackTrace();
 		ctx.close();
 	}
+
+	@Override
+	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+		// TODO Auto-generated method stub
+		super.channelRegistered(ctx);
+	}
+
+	@Override
+	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+		// TODO Auto-generated method stub
+		super.channelUnregistered(ctx);
+	}
+
+	//TODO доработать
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		super.channelInactive(ctx);
+		authManager.removeFromMap(ctx.channel());
+	}
+	
+	
 }

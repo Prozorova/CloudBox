@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exep.IncorrectPathException;
+import com.cloud.utils.queries.TransferMessage;
 
 /**
  * Осуществляет работу с файлами на стороне сервера
@@ -19,6 +20,7 @@ import com.cloud.utils.exep.IncorrectPathException;
 public class FilesProcessor {
 	
 	private static final Logger logger = Logger.getLogger(FilesProcessor.class);
+	private final String div = TransferMessage.DIVIDER;
 	
 	/**
 	 * Собрать в сет информацию о файлах в папке
@@ -42,9 +44,9 @@ public class FilesProcessor {
 			public void accept(Path filePath) {
 				File file = filePath.toFile();
 				try {
-					set.add(file.getName() + ", " + 
-					        Files.getAttribute(file.toPath(), "basic:size") + ", " +
-					        Files.getLastModifiedTime(file.toPath()).toMillis() + ", " +
+					set.add(file.getName() + div + 
+					        Files.getAttribute(file.toPath(), "basic:size") + div +
+					        Files.getLastModifiedTime(file.toPath()).toMillis() + div +
 					        file.isDirectory());
 					
 				} catch (IOException e) {

@@ -35,14 +35,15 @@ public class MessagesProcessor {
 	 * @param data сообщение для отправки
 	 */
 	public void sendData(TransferMessage data) {
-		new Thread(() -> {
+		Thread t = new Thread(() -> {
 			try {
 				CloudBoxClient.getCloudBoxClient(data, this);
 	
 			} catch (InterruptedException | IllegalDataException e) {
 				logger.error("Server connection failed: " + e.getMessage(), e);
 			} 
-		}).run();
+		});
+		t.setDaemon(true); t.start();
     }
 	
 	/**
@@ -64,8 +65,9 @@ public class MessagesProcessor {
 			// аутентификация пройдена, переключаем экран
 			logger.debug("Authentication is passed");
 			Controller.setServerFilesSet(files);
-			Controller.setLogin(user);
+//			Controller.setLogin(user);
 			currentController = Controller.getSceneManager().changeScene(SceneManager.Scenes.MAIN_SCENE);
+			
 		} catch (IOException e) {
 			logger.error("   Scene switching failed: " + e.getMessage(), e);
 		}
@@ -85,5 +87,9 @@ public class MessagesProcessor {
 	public MessagesProcessor setController(Controller controller) {
 		this.currentController = controller;
 		return PROCESSOR_INSTANCE;
+	}
+	
+	public void showAlert(String title, String msg) {
+		currentController.throwAlertMessage(title, msg);
 	}
 }

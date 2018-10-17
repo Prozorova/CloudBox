@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 
@@ -25,6 +27,9 @@ public class AuthManager {
 	
 	private static final Logger logger = Logger.getLogger(AuthManager.class);
 	
+	// список пользователей в сети
+	private static final ConcurrentMap<Channel, String> currentUsers = new ConcurrentHashMap<>();
+	
 	/**
 	 * Ответить на запрос аутентификации
 	 * @param auth данные аутентификации
@@ -39,6 +44,12 @@ public class AuthManager {
 		try {
 			//если пришел запрос аутентификации
 			if (auth.getQueryType() == QueryType.AUTH_DATA) {
+				
+				// если такой пользователь уже в сети
+				if (currentUsers.containsValue(login)) {
+					throw new UserSQLException("This user is already online");
+				}
+				
 				Path authResultPrivateBox = this.getUserFiles(login, pass);
 				jsonResponse = new JsonResultAuth(processor.gatherFilesFromDir(authResultPrivateBox));
 			}	
@@ -59,7 +70,11 @@ public class AuthManager {
 				jsonResponse = new JsonResultAuth("Server error");
 		}
 		
-		channel.writeAndFlush(new TransferMessage(jsonResponse)).addListener(ChannelFutureListener.CLOSE);
+		if (jsonResponse.getAuthResult()) {
+			currentUsers.put(channel, login);
+			channel.writeAndFlush(new TransferMessage(jsonResponse));
+		} else
+			channel.writeAndFlush(new TransferMessage(jsonResponse)).addListener(ChannelFutureListener.CLOSE);
 	}
 	
 	/**
@@ -101,5 +116,13 @@ public class AuthManager {
 			logger.error("Registation ("+login+") is failed (problem with creating private dir): " + e.getMessage(), e);
 		}
 		return null;
+	}
+	
+	public static String getUser(Channel channel) {
+		return currentUsers.get(channel);
+	}
+	
+	public void removeFromMap(Channel channel) {
+		currentUsers.remove(channel);
 	}
 }

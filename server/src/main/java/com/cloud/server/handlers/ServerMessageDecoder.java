@@ -3,6 +3,7 @@ package com.cloud.server.handlers;
 import java.io.File;
 import java.util.List;
 
+import com.cloud.server.AuthManager;
 import com.cloud.server.DatabaseQueriesProcessor;
 import com.cloud.utils.handlers.TransferMessageDecoder;
 import com.cloud.utils.queries.StandardJsonQuery;
@@ -29,7 +30,14 @@ public class ServerMessageDecoder extends ByteToMessageDecoder{
 		
 		if (in.readBoolean()) {
 			int fileLength = in.readInt();
-			String login = ((JsonSendFile)jsonQuery).getFileOwner();
+			String login = AuthManager.getUser(ctx.channel());
+			
+			if (login == null) {
+				System.out.println("WRONG USER");  //TODO
+				return;    
+			} else
+				((JsonSendFile)jsonQuery).setFileOwner(login);
+			
 			String path = DatabaseQueriesProcessor.getInstance().getPath(login) + // путь к папке клиента
 					      ((JsonSendFile)jsonQuery).getFilePath() +               // путь внутри папки
 					      File.separator +
