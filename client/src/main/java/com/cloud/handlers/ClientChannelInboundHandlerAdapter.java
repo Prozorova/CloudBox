@@ -1,13 +1,15 @@
 package com.cloud.handlers;
 
+import com.cloud.fx.Controller;
 import com.cloud.fx.MessagesProcessor;
-import com.cloud.utils.queries.TransferMessage;
+import com.cloud.fx.SceneManager.Scenes;
+import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.json.JsonConfirm;
 import com.cloud.utils.queries.json.JsonResultAuth;
+import com.cloud.utils.queries.json.JsonSimpleMessage;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.socket.SocketChannel;
 
 /**
  * Хендлер клиента: обрабатывает входящие сообщения от сервера
@@ -15,45 +17,40 @@ import io.netty.channel.socket.SocketChannel;
  */
 public class ClientChannelInboundHandlerAdapter extends ChannelInboundHandlerAdapter {
 	
-	// данные аутентификации
-	private TransferMessage authMsg;
-	
-	private MessagesProcessor processor;
-	
-	public ClientChannelInboundHandlerAdapter(SocketChannel currentChannel, 
-			                                  TransferMessage data,
-			                                  MessagesProcessor processor) {
-		super();
-		this.authMsg = data;
-		this.processor = processor;
-	}
+	private MessagesProcessor processor = MessagesProcessor.getProcessor();
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		ctx.writeAndFlush(authMsg);
+		super.channelActive(ctx);
+		ctx.writeAndFlush(processor.getAuthData());
 	}
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		
-		TransferMessage read = (TransferMessage)msg;
-    	switch (read.getJsonQuery().getQueryType()) {
-			case AUTH_DATA:
-				
-				break;
+		StandardJsonQuery json = (StandardJsonQuery)msg;
+    	switch (json.getQueryType()) {
 			case AUTH_RESULT:
-				JsonResultAuth jsonAuth = (JsonResultAuth)read.getJsonQuery();
+				JsonResultAuth jsonAuth = (JsonResultAuth)json;
 				processor.login(jsonAuth.getAuthResult(), jsonAuth.getFiles(), jsonAuth.getReason());
 				break;
-			case SEND_FILE:
+			case SEND_FILE:   //TODO
 				break;
 			case CONFIRMATION:
-				JsonConfirm jsonConfirm = (JsonConfirm)read.getJsonQuery();
+				JsonConfirm jsonConfirm = (JsonConfirm)json;
 				if (jsonConfirm.getConfirmation())
 					processor.refreshFilesOnServer(jsonConfirm.getFiles());
 				else
-					processor.showAlert("Error", "File transmitting failed");
-			default:
+					Controller.throwAlertMessage("Error", "File transmitting failed");
+				break;
+			case MESSAGE:
+				JsonSimpleMessage jsonMsg = (JsonSimpleMessage)json;
+				Controller.throwAlertMessage("Alert", jsonMsg.getMessage());
+				Controller.getSceneManager().changeScene(Scenes.AUTH);
+				break;
+			
+				
+			default:       // AUTH_DATA, REG_DATA
 				break;
     	}
 	}

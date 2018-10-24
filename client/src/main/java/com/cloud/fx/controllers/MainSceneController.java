@@ -14,13 +14,15 @@ import java.util.function.Consumer;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.CloudBoxClient;
 import com.cloud.fx.Controller;
 import com.cloud.fx.MessagesProcessor;
 import com.cloud.fx.components.LabelWithInfo;
 import com.cloud.fx.components.LabelWithInfo.FileType;
 import com.cloud.logger.ClientConsoleLogAppender;
+import com.cloud.utils.processors.FileTransferHelper;
+import com.cloud.utils.processors.StandardTransference;
 import com.cloud.utils.queries.StandardJsonQuery;
-import com.cloud.utils.queries.TransferMessage;
 import com.cloud.utils.queries.json.JsonSendFile;
 
 import javafx.application.Platform;
@@ -219,7 +221,7 @@ public class MainSceneController extends Controller implements Initializable {
 				LabelWithInfo myLabel = null;
 				try {
 					// парсим информацию о файле
-					String[] fileAttribute = fileInfo.split(TransferMessage.DIVIDER);
+					String[] fileAttribute = fileInfo.split(StandardJsonQuery.DIVIDER);
 					String fileName = fileAttribute[0];
 					long   fileSize = Long.parseLong(fileAttribute[1]);
 					long   modMills = Long.parseLong(fileAttribute[2]);
@@ -243,7 +245,9 @@ public class MainSceneController extends Controller implements Initializable {
 	
 	@Override
 	public void refresh() {
-		this.filesOnServer = gatherFilesInDirServer(getFilesOnServer());
+		Set<String> files = getFilesOnServer();
+		if (files != null && !files.isEmpty())
+			this.filesOnServer = gatherFilesInDirServer(files);
 		showFilesInDir(FilesSource.SERVER);
 	}
 	
@@ -281,7 +285,8 @@ public class MainSceneController extends Controller implements Initializable {
 		tableView.getItems().clear();
 		
 		filesInDir.add(rootLabel);
-		filesInDir.addAll(files);
+		if (files != null && !files.isEmpty())
+			filesInDir.addAll(files);
 		
 		tableView.setItems(filesInDir);
 
@@ -385,16 +390,26 @@ public class MainSceneController extends Controller implements Initializable {
 	 * @param tofilesSource куда копируем
 	 */
 	private void copyFile(LabelWithInfo file, FilesSource fromfilesSource, FilesSource tofilesSource) {
+		
 		Set<LabelWithInfo> destSet = (tofilesSource == FilesSource.CLIENT ? filesOnClient : filesOnServer);
 
-		StandardJsonQuery jsonQuery = new JsonSendFile(file.getFileName(),
-				                                       file.getFileSizeBytes(),
-													   "***",    // Check sum   ???
-													   currentDirServer);      // TODO path
+		JsonSendFile jsonQuery = null;
+		try {
+			jsonQuery = new JsonSendFile(file.getFileName(),
+					                     file.getFileSizeBytes(),
+					                     FileTransferHelper.get32Hex(file.getFile()),    // Check sum   ???
+					                     currentDirServer,
+					                     1);
+		} catch (IOException e) {
+			logger.debug("File transfer failed: " + e.getMessage(),e);
+		}
 		//			if (tofilesSource == FilesSource.CLIENT)
 		//				filePath = currentDirClient;
 
-		MessagesProcessor.getProcessor().sendData(new TransferMessage(jsonQuery).addFile(file.getFile()));
+		if (jsonQuery != null)
+			MessagesProcessor.getProcessor().sendTransference(file.getFile(), jsonQuery);
+		else {}
+			// TODO
 
 	}
 	
@@ -477,4 +492,14 @@ public class MainSceneController extends Controller implements Initializable {
 		return filePath;
 		
 	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		try {
+//			CloudBoxClient.getInstance().disconnect();
+		} finally {
+			super.finalize();
+		}
+	}
+	
 }

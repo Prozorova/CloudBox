@@ -1,13 +1,16 @@
 package com.cloud;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import com.cloud.fx.MessagesProcessor;
+import com.cloud.fx.Controller;
+import com.cloud.fx.SceneManager.Scenes;
 import com.cloud.handlers.ClientChannelInboundHandlerAdapter;
 import com.cloud.handlers.ClientMessageDecoder;
-import com.cloud.utils.exep.IllegalDataException;
 import com.cloud.utils.handlers.TransferMessageEncoder;
-import com.cloud.utils.queries.TransferMessage;
+import com.cloud.utils.processors.StandardTransference;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -18,8 +21,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
-import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 
 /**
  * Клиент Netty
@@ -30,35 +31,36 @@ public class CloudBoxClient {
 	private static final int  INET_PORT_NUMBER = 8189;
 	private static final String      INET_HOST = "localhost";
 	
-	private Channel currentChannel;
+	private Channel currentChannel = null;
 	
-	private static CloudBoxClient client = null;
+	private static CloudBoxClient INSTANCE = null;
+	
+	private static final ExecutorService service = Executors.newFixedThreadPool(5);
 	
 	private CloudBoxClient() {}
 	
-	/**
-	 * Синглтон: если объект уже создан - возвращаем его, иначе создаем
-	 * @param auth данные аутентификации
-	 * @param processor ссылка на обработчик сообщений
-	 * @return клиент нетти
-	 * @throws IllegalDataException
-	 * @throws InterruptedException
-	 */
-    public static CloudBoxClient getCloudBoxClient(TransferMessage data, MessagesProcessor processor) 
-    		throws IllegalDataException, InterruptedException {
-		if (client == null)
-			client = new CloudBoxClient();
-		
-		if (client.currentChannel == null || !client.currentChannel.isActive())
-			client.start(data, processor);
-		else
-			client.sendData(data);
-		
-        return client;
-    }
-	
-	public void start(TransferMessage data, MessagesProcessor processor) 
-			throws InterruptedException, IllegalDataException  {
+	public static CloudBoxClient getInstance() {
+		if (INSTANCE == null || INSTANCE.currentChannel == null || !INSTANCE.currentChannel.isActive()) {
+			INSTANCE = new CloudBoxClient();
+			Thread t = new Thread(() -> {
+				try {
+					INSTANCE.start();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+			t.setDaemon(true); 
+			service.submit(t);
+		}
+		return INSTANCE;
+	}
+    
+    /**
+     * Соединение с сервером
+     * @throws InterruptedException
+     */
+	public void start() throws InterruptedException  {
 		
 		EventLoopGroup workerGroup = new NioEventLoopGroup();
 		try {
@@ -68,14 +70,14 @@ public class CloudBoxClient {
                            .handler(new ChannelInitializer<SocketChannel>() {
                                 @Override
                                 public void initChannel(SocketChannel socketChannel) {
+                                	currentChannel = socketChannel;
+                                	
                                     ChannelPipeline pipeline = socketChannel.pipeline();
-                                    pipeline.addLast(new ProtobufVarint32FrameDecoder());
+//                                    pipeline.addLast(new ProtobufVarint32FrameDecoder());
                                     pipeline.addLast(new ClientMessageDecoder());
-                                    pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
+//                                    pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
                                     pipeline.addLast(new TransferMessageEncoder());
-                                    pipeline.addLast(new ClientChannelInboundHandlerAdapter(socketChannel, data, processor));
-                                    
-                                    currentChannel = socketChannel;
+                                    pipeline.addLast(new ClientChannelInboundHandlerAdapter());
                                 }
                            });
 			
@@ -90,8 +92,29 @@ public class CloudBoxClient {
         }
 	}
 	
-	private void sendData(TransferMessage data) {
-		currentChannel.writeAndFlush(data);
+	/**
+	 * Отправка сообщения на сервер
+	 * @param data сообщение
+	 * @throws IOException
+	 * @throws InterruptedException 
+	 */
+	public void sendData(StandardTransference data) throws IOException, InterruptedException {
+		
+		if (INSTANCE.currentChannel == null || !INSTANCE.currentChannel.isActive()) {
+			// если нет открытого канала - переходим на экран аутотентификации
+			Controller.getSceneManager().changeScene(Scenes.AUTH);
+			Controller.throwAlertMessage("Error", "You are unauthorized or connection to server lost");
+			return;
+		}
+		Thread t = new Thread(() -> {
+				INSTANCE.currentChannel.writeAndFlush(data);
+		});
+		t.setDaemon(true);
+		service.submit(t);
+	}
+	
+	public void disconnect() {
+		currentChannel.close();
 	}
 
 }

@@ -1,11 +1,9 @@
 package com.cloud.utils.handlers;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.nio.file.Files;
+import java.nio.charset.Charset;
 
-import com.cloud.utils.queries.TransferMessage;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cloud.utils.processors.FileTransferHelper;
+import com.cloud.utils.processors.StandardTransference;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,50 +14,34 @@ import io.netty.handler.codec.MessageToByteEncoder;
  * TransferMessage в массив байтов
  * @author prozorova 10.10.2018
  */
-public class TransferMessageEncoder extends MessageToByteEncoder<TransferMessage> {
 
-	int buf = 1024 *1024 * 100;
-	// для работы с json
-	private static ObjectMapper mapper = new ObjectMapper();
+public class TransferMessageEncoder extends MessageToByteEncoder<StandardTransference> {
 
 	@Override
-	protected void encode(ChannelHandlerContext ctx, TransferMessage msg, ByteBuf out) throws Exception {
+	protected void encode(ChannelHandlerContext ctx, StandardTransference msg, ByteBuf out) throws Exception {
+	
+		int code = msg.getTransferMessageCode();
 		
-		//TODO для тестирования - убрать
-		mapper.writeValue(new FileOutputStream("111.json", false), msg.getJsonQuery());
+		// записываем размер "посылки"
+		int length = (code == FileTransferHelper.CODE_JSON) ? msg.getLength() + 4 + 4:
+			                                                  msg.getLength() + 4 + 4 + 8 + 32;
+		out.writeInt(length);
 		
-		boolean isWithFile = false;    // передаем ли файл
-		File file = msg.getFile();
+		// записываем код и размер содержимого
+		out.writeInt(code);
+		out.writeInt(msg.getLength());
 		
-		// будет ли передача файла
-		if (file != null)
-			isWithFile = true;
-
-		byte[] jsonBytes = mapper.writeValueAsBytes(msg.getJsonQuery());
-		
-		// передаем размер json
-		out.writeMedium(jsonBytes.length);
-				
-		// передаем служебную информацию в виде json
-		out.writeBytes(jsonBytes);
-		
-		// будет ли передача файла
-		out.writeBoolean(isWithFile);
-		
-		// передача файла
-		if (isWithFile) {
+		// если передаем файл или его часть
+		if (code == FileTransferHelper.CODE_FILE) {
+			System.out.println("SENDING FILE: " + msg.getLength() + " *** " + msg.getFileID());
+			out.writeLong(msg.getStartPosition());
 			
-			// TODO пока большие файлы не поддерживаются
-			if (file.length() > Integer.MAX_VALUE)
-				throw new Exception("Too big file");
-			
-			// передаем файл
-			out.writeInt((int)file.length());
-			try {
-			out.writeBytes(Files.newInputStream(file.toPath()), (int)file.length());
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
+			out.writeCharSequence(msg.getFileID(), Charset.defaultCharset());
 		}
+		
+		// передаем сами данные
+		out.writeBytes(msg.getData());
+		
 	}
+	
 }

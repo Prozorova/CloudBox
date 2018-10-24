@@ -33,6 +33,19 @@ public class JsonConfirm extends StandardJsonQuery {
 			}
 		});
 	}
+	
+	/**
+	 * конструктор на случай неудачи в получении файла
+	 */
+	@SuppressWarnings("serial")
+	public JsonConfirm() {
+		super(QueryType.CONFIRMATION, 
+				new LinkedHashMap<String, String>() {
+			{
+				put(PARAM_NAME_ANSWER, "false");
+			}
+		});
+	}
 
 	/**
 	 * Получить результат (подтверждение)

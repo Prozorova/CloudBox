@@ -8,7 +8,6 @@ import org.apache.log4j.Logger;
 import com.cloud.fx.Controller;
 import com.cloud.fx.MessagesProcessor;
 import com.cloud.utils.queries.StandardJsonQuery.QueryType;
-import com.cloud.utils.queries.TransferMessage;
 import com.cloud.utils.queries.json.JsonAuth;
 
 import javafx.fxml.FXML;
@@ -50,7 +49,7 @@ public class AuthController extends Controller implements Initializable {
 		
 		JsonAuth jsonQuery = new JsonAuth(QueryType.AUTH_DATA, textFieldLogin.getText(), textFieldPass.getText());
 		
-		MessagesProcessor.getProcessor().setController(this).sendData(new TransferMessage(jsonQuery));
+		MessagesProcessor.getProcessor().setController(this).sendTransference(jsonQuery);
 		
 		clearTextFields();
 		
@@ -65,7 +64,7 @@ public class AuthController extends Controller implements Initializable {
 			
 			JsonAuth jsonQuery = new JsonAuth(QueryType.REG_DATA, textFieldLogin.getText(), textFieldPass.getText());
 		
-			MessagesProcessor.getProcessor().setController(this).sendData(new TransferMessage(jsonQuery));
+			MessagesProcessor.getProcessor().setController(this).sendTransference(jsonQuery);
 			
 			clearTextFields();
 		} else {

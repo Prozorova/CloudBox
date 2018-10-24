@@ -67,7 +67,7 @@ public class JsonResultAuth extends StandardJsonQuery {
 	 */
 	@JsonIgnore
 	public Set<String> getFiles() {
-		return this.getParamsWithSet() == null ? null : this.getParamsWithSet().get(PARAM_NAME_ROOT_FILES);
+		return getAuthResult() ? this.getParamsWithSet().get(PARAM_NAME_ROOT_FILES) : null;
 	}
 	
 	/**

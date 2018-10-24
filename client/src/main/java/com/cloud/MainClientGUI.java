@@ -26,6 +26,10 @@ public class MainClientGUI extends Application {
 			primaryStage.setMaxWidth(1000);
 			primaryStage.getIcons().add(new Image(getResource("/Icons/icon-16x16.png").toExternalForm()));
 			
+			primaryStage.setOnCloseRequest(event -> {
+				System.exit(0);
+			});
+			
 			// создание экземпляра SceneManager и показ экрана авторизации
 			new SceneManager(this, primaryStage).changeScene(SceneManager.Scenes.AUTH);
 				

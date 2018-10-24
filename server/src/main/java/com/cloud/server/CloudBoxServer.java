@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import com.cloud.server.handlers.ServerMessageDecoder;
 import com.cloud.server.handlers.TransferMessageHandler;
 import com.cloud.utils.handlers.TransferMessageEncoder;
+import com.cloud.utils.processors.FileTransferHelper;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -41,9 +42,9 @@ public class CloudBoxServer {
 								@Override
 								public void initChannel(SocketChannel socketChannel) {
 									ChannelPipeline pipeline = socketChannel.pipeline();
-									pipeline.addLast(new ProtobufVarint32FrameDecoder());
+//									pipeline.addLast(new ProtobufVarint32FrameDecoder());
 									pipeline.addLast(new ServerMessageDecoder());
-									pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
+//									pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
 									pipeline.addLast(new TransferMessageEncoder());
 									pipeline.addLast(new TransferMessageHandler());
 								}
@@ -61,8 +62,7 @@ public class CloudBoxServer {
             workerGroup.shutdownGracefully();
         }
 	}
-	
-	
+
 	public static void main(String[] args) throws Exception {
         new CloudBoxServer().start();
     }

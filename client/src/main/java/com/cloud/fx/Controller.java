@@ -13,7 +13,7 @@ public abstract class Controller {
 	private static String login;
 	
 	
-	public void throwAlertMessage(String title, String msg) {
+	public static void throwAlertMessage(String title, String msg) {
 		Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle(title);

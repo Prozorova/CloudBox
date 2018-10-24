@@ -1,13 +1,10 @@
 package com.cloud.utils.handlers;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -21,11 +18,13 @@ import io.netty.buffer.ByteBuf;
  * парсит json, загружает файл
  * @author prozorova 10.10.2018
  */
-public class TransferMessageDecoder  {
+public class MessageDecodeHelper  {
 
 	// для работы с json
 	private static ObjectMapper mapper = new ObjectMapper();
 
+	private static Charset charset = Charset.defaultCharset();
+	
 	/**
 	 * Распарсить json
 	 * @param in байты, полученные из сети
@@ -34,38 +33,40 @@ public class TransferMessageDecoder  {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	public static StandardJsonQuery decode(ByteBuf in) throws JsonParseException, JsonMappingException, IOException {
-
-		// читаем json
-		int jsonLength = in.readMedium();
-
-		Charset charset = Charset.defaultCharset();
-		StandardJsonQuery jsonQuery = mapper.readValue(in.readBytes(jsonLength).toString(charset),
-				                                       StandardJsonQuery.class);
+	public static StandardJsonQuery decode(ByteBuf in) 
+			throws JsonParseException, JsonMappingException, IOException {
+		
+		int length = in.readInt();
+		
+		StandardJsonQuery jsonQuery = mapper.readValue(in.readBytes(length).toString(charset),
+                                                       StandardJsonQuery.class);
+			
 		// TODO для тестирования - убрать
 		mapper.writeValue(new FileOutputStream("111.json", false), jsonQuery);
-		
+
 		return jsonQuery;
+
 	}
-	
+
 	/**
 	 * Загрузить файл, полученный из сети
 	 * @param in байты, полученные из сети
-	 * @param length длина файла (кол-во байт)
-	 * @param filePath путь к файлу для записи
-	 * @return объект File, указывающий на загруженный файл
+	 * @param length
+	 * @param pos
+	 * @param file файл для записи
 	 * @throws IOException
 	 */
-	public static File recieveFile(ByteBuf in, int length, String filePath) throws IOException {
+	public static void recieveFile(ByteBuf in, int length, long pos, Path filePath) throws IOException {
 		
-		Path path = Paths.get(filePath);
-		try {
-		in.readBytes(Files.newOutputStream(path, 
-				                           StandardOpenOption.CREATE), 
-				     length);
-		} catch (Throwable e) {
-			e.printStackTrace();
+		try (RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw")) {
+			System.out.println("GETTING FILE: " + filePath + ", write from pos " + pos);
+			raf.seek(pos);
+
+			byte[] data = new byte[length];
+			in.readBytes(data);
+
+			raf.write(data);
 		}
-		return path.toFile();
+		
 	}
 }

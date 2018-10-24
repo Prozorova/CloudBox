@@ -1,6 +1,9 @@
 package com.cloud.server;
 
+import com.cloud.utils.exep.IllegalDataException;
 import com.cloud.utils.exep.UserSQLException;
+import com.cloud.utils.processors.FileTransferHelper;
+import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.StandardJsonQuery.QueryType;
 
 import java.io.IOException;
@@ -12,9 +15,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.queries.TransferMessage;
 import com.cloud.utils.queries.json.JsonAuth;
 import com.cloud.utils.queries.json.JsonResultAuth;
+import com.cloud.utils.queries.json.JsonSimpleMessage;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -70,11 +73,15 @@ public class AuthManager {
 				jsonResponse = new JsonResultAuth("Server error");
 		}
 		
-		if (jsonResponse.getAuthResult()) {
-			currentUsers.put(channel, login);
-			channel.writeAndFlush(new TransferMessage(jsonResponse));
-		} else
-			channel.writeAndFlush(new TransferMessage(jsonResponse)).addListener(ChannelFutureListener.CLOSE);
+		try {
+			if (jsonResponse.getAuthResult()) {
+				currentUsers.put(channel, login);
+				channel.writeAndFlush(FileTransferHelper.prepareTransference(jsonResponse));
+			} else
+				channel.writeAndFlush(FileTransferHelper.prepareTransference(jsonResponse)).addListener(ChannelFutureListener.CLOSE);
+		} catch (IllegalDataException | IOException e) {
+			logger.error("Transferece preparing failed: " + e.getMessage(), e);
+		}
 	}
 	
 	/**
@@ -94,7 +101,7 @@ public class AuthManager {
 		}
 		return null;
     }
-	
+
 	/**
 	 * Регистрация нового пользователя
 	 * @param login логин
@@ -124,5 +131,17 @@ public class AuthManager {
 	
 	public void removeFromMap(Channel channel) {
 		currentUsers.remove(channel);
+	}
+	
+	/**
+	 * оповещение пользователей о прекращении работы сервера
+	 */
+	static void disconnectFromServer() throws Exception {
+		for (Channel user : currentUsers.keySet()) {
+			StandardJsonQuery json = new JsonSimpleMessage("Connection with server lost", true);
+			user.writeAndFlush(FileTransferHelper.prepareTransference(json));
+		}
+		
+		currentUsers.clear();
 	}
 }

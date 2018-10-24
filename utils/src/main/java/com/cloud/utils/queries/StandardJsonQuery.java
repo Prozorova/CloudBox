@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 @JsonDeserialize(using = StandardQueryCustomDeserializer.class)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public abstract class StandardJsonQuery  {
+public abstract class StandardJsonQuery {
 	
 	// TODO список всех типов запросов/ответов
 	public enum QueryType {
@@ -23,8 +23,11 @@ public abstract class StandardJsonQuery  {
 					AUTH_RESULT,   // ответ сервера на запрос аутентификации
 					SEND_FILE,     // передать файл
 					CONFIRMATION,  // подтверждение, напр. о получении файла
-					REG_DATA       // регистрация нового пользователя
+					REG_DATA,      // регистрация нового пользователя
+					MESSAGE        // сообщение от сервера: никак не обрабатывается, выводится Alert
 		};
+	
+	public final static String DIVIDER = " ## ";
 	
 	private QueryType queryType;
 	
@@ -35,6 +38,8 @@ public abstract class StandardJsonQuery  {
 	// параметры, задающиеся списком (напр. для отправки списка файлов пользователю)
 	@JsonInclude(value=Include.NON_EMPTY, content=Include.NON_NULL)
 	private Map<String, Set<String>> paramsWithSet;
+	
+	
 	
 	public StandardJsonQuery() {
 	}
@@ -51,7 +56,7 @@ public abstract class StandardJsonQuery  {
 		this.standardParams = parameters;
 		this.paramsWithSet = paramsWithSet;
 	}
-
+	
 	
 	// ************ геттеры / сеттеры ************ \\
 

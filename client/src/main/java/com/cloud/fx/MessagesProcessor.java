@@ -1,14 +1,18 @@
 package com.cloud.fx;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.CloudBoxClient;
-import com.cloud.fx.controllers.MainSceneController;
 import com.cloud.utils.exep.IllegalDataException;
-import com.cloud.utils.queries.TransferMessage;
+import com.cloud.utils.processors.FileTransferHelper;
+import com.cloud.utils.processors.StandardTransference;
+import com.cloud.utils.queries.StandardJsonQuery;
+import com.cloud.utils.queries.json.JsonAuth;
+import com.cloud.utils.queries.json.JsonSendFile;
 
 import javafx.application.Platform;
 
@@ -24,6 +28,9 @@ public class MessagesProcessor {
 	
 	private Controller currentController;
 	
+	private JsonAuth auth;
+	private CloudBoxClient client;
+	
 	private MessagesProcessor() {}
 
 	public static MessagesProcessor getProcessor() {
@@ -34,16 +41,64 @@ public class MessagesProcessor {
 	 * Отправить сообщение на сервер
 	 * @param data сообщение для отправки
 	 */
-	public void sendData(TransferMessage data) {
-		Thread t = new Thread(() -> {
+	private void sendData(StandardTransference data) {
+		
+		
 			try {
-				CloudBoxClient.getCloudBoxClient(data, this);
+				client.sendData(data);
+			} catch (IOException | InterruptedException e) {
+				logger.error("Transference to server failed: " + e.getMessage(), e);
+			}
+		
+	}
 	
-			} catch (InterruptedException | IllegalDataException e) {
-				logger.error("Server connection failed: " + e.getMessage(), e);
-			} 
-		});
-		t.setDaemon(true); t.start();
+	 /**
+     * отправка json на серер
+     * @param json запрос
+     * @throws Exception
+     */
+    public void sendTransference(StandardJsonQuery json) {
+    	try {
+    		if (json instanceof JsonAuth) {
+    			this.auth = (JsonAuth) json;
+    			this.client = CloudBoxClient.getInstance();
+    		}
+    		else
+    			PROCESSOR_INSTANCE.sendData(FileTransferHelper.prepareTransference(json));
+
+    	} catch (Exception e) {
+    		logger.error("Query transference failed: " + e.getMessage(), e);
+    	}
+    }
+    
+    /**
+     * отправка файла на сервер
+     * @param file файл
+     * @throws IllegalDataException
+     * @throws IOException
+     */
+    public void sendTransference(File file, JsonSendFile json) {
+    	try {
+    		if (file != null && file.exists() && file.length() > 0) {
+    			
+    			int parts = (int)(file.length()/FileTransferHelper.BUFFER_LEN) + 1;
+    			json.setPartsAmount(parts);
+    			PROCESSOR_INSTANCE.sendData(FileTransferHelper.prepareTransference(json));
+    			
+    			
+    			for (int i = 0; i < parts; i++) {
+    				StandardTransference transference = FileTransferHelper.prepareTransference(file, i, json.getFileCheckSum());
+    				
+    					PROCESSOR_INSTANCE.sendData(transference);
+    				
+				} 
+    			
+    				
+    		} else
+    			logger.error("File for transfer is empty or doesn't exists");
+    	} catch (Exception e) {
+    		logger.error("File transference failed: " + e.getMessage(), e);
+    	}
     }
 	
 	/**
@@ -57,7 +112,7 @@ public class MessagesProcessor {
 		
 		if (!isAuthPass) {
 			logger.debug("Authentication is failed: " + reason);
-			currentController.throwAlertMessage("Authorization failed", reason);
+			Controller.throwAlertMessage("Authorization failed", reason);
 			return;
 		}
 			
@@ -89,7 +144,15 @@ public class MessagesProcessor {
 		return PROCESSOR_INSTANCE;
 	}
 	
-	public void showAlert(String title, String msg) {
-		currentController.throwAlertMessage(title, msg);
+	public StandardTransference getAuthData() {
+		StandardTransference data = null;
+		
+		try {
+			data = FileTransferHelper.prepareTransference(auth);
+		} catch (Exception e) {
+			logger.debug("Authorization data transferring failed: " + e.getMessage(), e);
+		}
+		return data;
 	}
+
 }

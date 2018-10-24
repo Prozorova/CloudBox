@@ -15,4 +15,8 @@ public class IllegalDataException extends Exception {
 	public IllegalDataException(StandardJsonQuery.QueryType jsonType) {
 		super("Illegal type of json query: " + jsonType);
 	}
+	
+	public IllegalDataException(String msg) {
+		super("Illegal data for this operation: " + msg);
+	}
 }

@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exep.IncorrectPathException;
-import com.cloud.utils.queries.TransferMessage;
+import com.cloud.utils.queries.StandardJsonQuery;
 
 /**
  * Осуществляет работу с файлами на стороне сервера
@@ -20,7 +20,8 @@ import com.cloud.utils.queries.TransferMessage;
 public class FilesProcessor {
 	
 	private static final Logger logger = Logger.getLogger(FilesProcessor.class);
-	private final String div = TransferMessage.DIVIDER;
+	private static final String div = StandardJsonQuery.DIVIDER;
+
 	
 	/**
 	 * Собрать в сет информацию о файлах в папке
@@ -29,6 +30,7 @@ public class FilesProcessor {
 	 * @throws IOException
 	 */
 	public Set<String> gatherFilesFromDir(Path path) throws IOException {
+	
 		if (path == null)
 			throw new IncorrectPathException("Cannot gather files from null: ");
 			

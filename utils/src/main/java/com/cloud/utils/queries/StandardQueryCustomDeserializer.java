@@ -9,6 +9,7 @@ import com.cloud.utils.queries.json.JsonAuth;
 import com.cloud.utils.queries.json.JsonConfirm;
 import com.cloud.utils.queries.json.JsonResultAuth;
 import com.cloud.utils.queries.json.JsonSendFile;
+import com.cloud.utils.queries.json.JsonSimpleMessage;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -45,7 +46,8 @@ public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJs
 				jsonQuery = new JsonSendFile(root.standardParams.get(JsonSendFile.PARAM_NAME_FILENAME), 
 						                     Long.parseLong(root.standardParams.get(JsonSendFile.PARAM_NAME_FILESIZE)),
 						                     root.standardParams.get(JsonSendFile.PARAM_NAME_CHECKSUM),
-						                     root.standardParams.get(JsonSendFile.PARAM_NAME_PATH));
+						                     root.standardParams.get(JsonSendFile.PARAM_NAME_PATH),
+						                     Integer.parseInt(root.standardParams.get(JsonSendFile.PARAM_NAME_PARTS)));
 				break;
 			case CONFIRMATION:
 				jsonQuery = new JsonConfirm(root.paramsWithSet.get(JsonConfirm.PARAM_NAME_DIR_FILES));
@@ -54,6 +56,10 @@ public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJs
 				jsonQuery = new JsonAuth(QueryType.REG_DATA,
 						                 root.standardParams.get(JsonAuth.PARAM_NAME_LOGIN), 
 		                                 root.standardParams.get(JsonAuth.PARAM_NAME_PASS));
+				break;
+			case MESSAGE:
+				jsonQuery = new JsonSimpleMessage(root.standardParams.get(JsonSimpleMessage.PARAM_NAME_MESSAGE),
+						                          Boolean.parseBoolean(root.standardParams.get(JsonSimpleMessage.PARAM_NAME_DISCONNECT)));
 			default:
 				break;
 		}

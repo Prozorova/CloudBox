@@ -14,6 +14,7 @@ public class JsonSendFile extends StandardJsonQuery {
 	public static final String  PARAM_NAME_FILENAME = "file_name";
 	public static final String  PARAM_NAME_FILESIZE = "file_size";
 	public static final String  PARAM_NAME_CHECKSUM = "check_sum";
+	public static final String     PARAM_NAME_PARTS = "parts_amount";
 	public static final String      PARAM_NAME_PATH = "file_path";
 	public static final String PARAM_NAME_FILEOWNER = "file_owner";
 
@@ -28,7 +29,8 @@ public class JsonSendFile extends StandardJsonQuery {
 	public JsonSendFile(String fileName,
 			            Long fileSize,
 			            String fileCheckSum,
-			            String filePath) {
+			            String filePath,
+			            int parts) {
 		
 		super(QueryType.SEND_FILE,
 			  new LinkedHashMap<String, String>(){
@@ -37,6 +39,7 @@ public class JsonSendFile extends StandardJsonQuery {
 					put(PARAM_NAME_FILESIZE, fileSize.toString());
 					put(PARAM_NAME_CHECKSUM, fileCheckSum);
 					put(PARAM_NAME_PATH, filePath);
+					put(PARAM_NAME_PARTS, String.valueOf(parts));
 				}
 			  });
 	}
@@ -78,6 +81,15 @@ public class JsonSendFile extends StandardJsonQuery {
 	}
 	
 	/**
+	 * Получить количество частей, на которые разбит файл
+	 * @return кол-во частей файла
+	 */
+	@JsonIgnore
+	public int getPartsAmount() {
+		return Integer.parseInt(this.getStandardParams().get(PARAM_NAME_PARTS));
+	}
+	
+	/**
 	 * Получить владельца файла
 	 * @return идентификатор владельца файла
 	 */
@@ -100,6 +112,14 @@ public class JsonSendFile extends StandardJsonQuery {
 	 */
 	public void setFilePath(String filePath) {
 		this.getStandardParams().put(PARAM_NAME_PATH, filePath);
+	}
+	
+	/**
+	 * указать, на сколько частей разбивается файл
+	 * @param parts кол-во частей файла
+	 */
+	public void setPartsAmount(int parts) {
+		this.getStandardParams().put(PARAM_NAME_PARTS, String.valueOf(parts));
 	}
 
 }

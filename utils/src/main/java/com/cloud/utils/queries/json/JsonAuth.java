@@ -47,5 +47,5 @@ public class JsonAuth extends StandardJsonQuery {
 	public String getPassword() {
 		return this.getStandardParams().get(PARAM_NAME_PASS);
 	}
-	
+
 }

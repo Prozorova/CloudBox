@@ -2,6 +2,7 @@ package com.cloud.server;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -98,7 +99,13 @@ public class DatabaseQueriesProcessor {
 				int id = rs.getInt("user_id");
 				
 				// привязываем к учетке пользователя личный ящик
-				Files.createDirectory(Paths.get(ROOT_DIRECTORY + login));
+				Path path = Paths.get(ROOT_DIRECTORY + login);
+				if (Files.exists(path)) {
+					String rename = ROOT_DIRECTORY + login + System.currentTimeMillis();
+					Files.move(path, Paths.get(rename));
+					logger.error(path + " directory already exists, renamed to " + rename);
+				}
+				Files.createDirectory(path);
 				stmt.execute(String.format(QUERY_NEW_BOX_REGISTRATION, id, ROOT_DIRECTORY + login));
 			}
 			
