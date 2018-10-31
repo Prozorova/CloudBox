@@ -2,8 +2,6 @@ package com.cloud;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.cloud.fx.Controller;
 import com.cloud.fx.SceneManager.Scenes;
@@ -35,8 +33,6 @@ public class CloudBoxClient {
 	
 	private static CloudBoxClient INSTANCE = null;
 	
-	private static final ExecutorService service = Executors.newFixedThreadPool(5);
-	
 	private CloudBoxClient() {}
 	
 	public static CloudBoxClient getInstance() {
@@ -46,12 +42,11 @@ public class CloudBoxClient {
 				try {
 					INSTANCE.start();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			});
 			t.setDaemon(true); 
-			service.submit(t);
+			t.start();
 		}
 		return INSTANCE;
 	}
@@ -73,9 +68,7 @@ public class CloudBoxClient {
                                 	currentChannel = socketChannel;
                                 	
                                     ChannelPipeline pipeline = socketChannel.pipeline();
-//                                    pipeline.addLast(new ProtobufVarint32FrameDecoder());
                                     pipeline.addLast(new ClientMessageDecoder());
-//                                    pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
                                     pipeline.addLast(new TransferMessageEncoder());
                                     pipeline.addLast(new ClientChannelInboundHandlerAdapter());
                                 }
@@ -106,11 +99,7 @@ public class CloudBoxClient {
 			Controller.throwAlertMessage("Error", "You are unauthorized or connection to server lost");
 			return;
 		}
-		Thread t = new Thread(() -> {
-				INSTANCE.currentChannel.writeAndFlush(data);
-		});
-		t.setDaemon(true);
-		service.submit(t);
+		INSTANCE.currentChannel.writeAndFlush(data);
 	}
 	
 	public void disconnect() {

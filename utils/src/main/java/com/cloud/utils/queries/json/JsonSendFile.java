@@ -2,6 +2,7 @@ package com.cloud.utils.queries.json;
 
 import java.util.LinkedHashMap;
 
+import com.cloud.utils.queries.PathContainer;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -9,14 +10,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Служебная информация об отправляемом файле
  * @author prozorova 08.10.2018
  */
-public class JsonSendFile extends StandardJsonQuery {
+public class JsonSendFile extends StandardJsonQuery implements PathContainer{
 	
 	public static final String  PARAM_NAME_FILENAME = "file_name";
 	public static final String  PARAM_NAME_FILESIZE = "file_size";
 	public static final String  PARAM_NAME_CHECKSUM = "check_sum";
 	public static final String     PARAM_NAME_PARTS = "parts_amount";
 	public static final String      PARAM_NAME_PATH = "file_path";
-	public static final String PARAM_NAME_FILEOWNER = "file_owner";
 
 	/**
 	 * конструктор
@@ -76,6 +76,7 @@ public class JsonSendFile extends StandardJsonQuery {
 	 * @return относительный путь к файлу
 	 */
 	@JsonIgnore
+	@Override
 	public String getFilePath() {
 		return this.getStandardParams().get(PARAM_NAME_PATH);
 	}
@@ -90,26 +91,11 @@ public class JsonSendFile extends StandardJsonQuery {
 	}
 	
 	/**
-	 * Получить владельца файла
-	 * @return идентификатор владельца файла
-	 */
-	@JsonIgnore
-	public String getFileOwner() {
-		return this.getStandardParams().get(PARAM_NAME_FILEOWNER);
-	}
-	
-	/**
-	 * Задать владельца файла
-	 * @param owner
-	 */
-	public void setFileOwner(String owner) {
-		this.getStandardParams().put(PARAM_NAME_FILEOWNER, owner);
-	}
-	
-	/**
 	 * Задать путь к файлу
 	 * @param filePath путь к файлу
 	 */
+	@JsonIgnore
+	@Override
 	public void setFilePath(String filePath) {
 		this.getStandardParams().put(PARAM_NAME_PATH, filePath);
 	}
@@ -118,6 +104,7 @@ public class JsonSendFile extends StandardJsonQuery {
 	 * указать, на сколько частей разбивается файл
 	 * @param parts кол-во частей файла
 	 */
+	@JsonIgnore
 	public void setPartsAmount(int parts) {
 		this.getStandardParams().put(PARAM_NAME_PARTS, String.valueOf(parts));
 	}

@@ -3,6 +3,7 @@ package com.cloud.server;
 import com.cloud.utils.exep.IllegalDataException;
 import com.cloud.utils.exep.UserSQLException;
 import com.cloud.utils.processors.FileTransferHelper;
+import com.cloud.utils.processors.FilesProcessor;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.StandardJsonQuery.QueryType;
 
@@ -31,7 +32,7 @@ public class AuthManager {
 	private static final Logger logger = Logger.getLogger(AuthManager.class);
 	
 	// список пользователей в сети
-	private static final ConcurrentMap<Channel, String> currentUsers = new ConcurrentHashMap<>();
+	private static final ConcurrentMap<Channel, User> currentUsers = new ConcurrentHashMap<>();
 	
 	/**
 	 * Ответить на запрос аутентификации
@@ -43,18 +44,20 @@ public class AuthManager {
 		String pass = auth.getPassword();
 		
 		JsonResultAuth jsonResponse = null;
+		User user = null;
 		
 		try {
 			//если пришел запрос аутентификации
 			if (auth.getQueryType() == QueryType.AUTH_DATA) {
 				
 				// если такой пользователь уже в сети
-				if (currentUsers.containsValue(login)) {
+				if (currentUsers.containsValue(new User(login, null))) {
 					throw new UserSQLException("This user is already online");
 				}
 				
 				Path authResultPrivateBox = this.getUserFiles(login, pass);
-				jsonResponse = new JsonResultAuth(processor.gatherFilesFromDir(authResultPrivateBox));
+				jsonResponse = new JsonResultAuth(processor.gatherFilesFromDir(authResultPrivateBox.toString()));
+				user = new User(login, authResultPrivateBox);
 			}	
 
 			// если запрос на регистрацию нового пользователя
@@ -62,12 +65,13 @@ public class AuthManager {
 				Path regResultPrivateBox = this.registerUser(login, pass);
 				if (regResultPrivateBox == null)
 					throw new UserSQLException("This username already exists");
-				jsonResponse = new JsonResultAuth(processor.gatherFilesFromDir(regResultPrivateBox));
+				jsonResponse = new JsonResultAuth(processor.gatherFilesFromDir(regResultPrivateBox.toString()));
+				user = new User(login, regResultPrivateBox);
 			}
-		} catch (IOException e) {
-			logger.error("Gathering files in local user "+login+" directory failed: " + e.getMessage(), e);
-		} catch (UserSQLException e) {
+		}catch (UserSQLException e) {
 			jsonResponse = new JsonResultAuth(e.getMessage());
+		} catch (Exception e) {
+			logger.error("Gathering files in local user "+login+" directory failed: " + e.getMessage(), e);
 		} finally {
 			if (jsonResponse == null) 
 				jsonResponse = new JsonResultAuth("Server error");
@@ -75,7 +79,7 @@ public class AuthManager {
 		
 		try {
 			if (jsonResponse.getAuthResult()) {
-				currentUsers.put(channel, login);
+				currentUsers.put(channel, user);
 				channel.writeAndFlush(FileTransferHelper.prepareTransference(jsonResponse));
 			} else
 				channel.writeAndFlush(FileTransferHelper.prepareTransference(jsonResponse)).addListener(ChannelFutureListener.CLOSE);
@@ -125,8 +129,20 @@ public class AuthManager {
 		return null;
 	}
 	
-	public static String getUser(Channel channel) {
-		return currentUsers.get(channel);
+	
+	
+	public static String getUserName(Channel channel) {
+		if (currentUsers.get(channel) != null)
+			return currentUsers.get(channel).userName;
+		else 
+			return null;
+	}
+	
+	public static Path getUserFolder(Channel channel) {
+		if (currentUsers.get(channel) != null)
+			return currentUsers.get(channel).userFolder;
+		else 
+			return null;
 	}
 	
 	public void removeFromMap(Channel channel) {
@@ -143,5 +159,23 @@ public class AuthManager {
 		}
 		
 		currentUsers.clear();
+	}
+	
+	
+	private class User {
+		String userName;
+		Path userFolder;
+		
+		private User (String userName, Path userFolder) {
+			this.userName = userName;
+			this.userFolder = userFolder;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj == null || !(obj instanceof User))
+					return false;
+			return userName.equals(((User)obj).userName);
+		}
 	}
 }

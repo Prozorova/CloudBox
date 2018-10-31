@@ -6,6 +6,7 @@ import com.cloud.utils.queries.StandardJsonQuery;
  * Кидается при попытке передачи некорректных данных
  * @author prozorova 10.10.2018
  */
+@SuppressWarnings("serial")
 public class IllegalDataException extends Exception {
 	
 	public IllegalDataException(Class<?> clazz) {

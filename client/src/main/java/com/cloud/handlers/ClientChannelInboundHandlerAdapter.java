@@ -6,6 +6,7 @@ import com.cloud.fx.SceneManager.Scenes;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.json.JsonConfirm;
 import com.cloud.utils.queries.json.JsonResultAuth;
+import com.cloud.utils.queries.json.JsonSendFile;
 import com.cloud.utils.queries.json.JsonSimpleMessage;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -34,7 +35,13 @@ public class ClientChannelInboundHandlerAdapter extends ChannelInboundHandlerAda
 				JsonResultAuth jsonAuth = (JsonResultAuth)json;
 				processor.login(jsonAuth.getAuthResult(), jsonAuth.getFiles(), jsonAuth.getReason());
 				break;
-			case SEND_FILE:   //TODO
+			case SEND_FILE:
+				JsonSendFile jsonSend = (JsonSendFile) msg;
+				if (jsonSend.getPartsAmount() == 0)            // передача файла прошла успешно
+					processor.refreshFilesOnClient();
+				else
+					Controller.throwAlertMessage("ERROR", "File transferring failed.");
+
 				break;
 			case CONFIRMATION:
 				JsonConfirm jsonConfirm = (JsonConfirm)json;

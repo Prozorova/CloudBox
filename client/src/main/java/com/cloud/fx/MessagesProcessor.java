@@ -2,16 +2,23 @@ package com.cloud.fx;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.CloudBoxClient;
+import com.cloud.fx.Controller.FilesSource;
+import com.cloud.fx.components.LabelWithInfo;
 import com.cloud.utils.exep.IllegalDataException;
 import com.cloud.utils.processors.FileTransferHelper;
 import com.cloud.utils.processors.StandardTransference;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.json.JsonAuth;
+import com.cloud.utils.queries.json.JsonGetFile;
 import com.cloud.utils.queries.json.JsonSendFile;
 
 import javafx.application.Platform;
@@ -25,6 +32,8 @@ public class MessagesProcessor {
 	private static final Logger logger = Logger.getLogger(MessagesProcessor.class);
 	
 	private static final MessagesProcessor PROCESSOR_INSTANCE = new MessagesProcessor();
+	
+	private static final ExecutorService service = Executors.newFixedThreadPool(10);
 	
 	private Controller currentController;
 	
@@ -74,31 +83,44 @@ public class MessagesProcessor {
     /**
      * отправка файла на сервер
      * @param file файл
+     * @param path 
      * @throws IllegalDataException
      * @throws IOException
      */
-    public void sendTransference(File file, JsonSendFile json) {
-    	try {
-    		if (file != null && file.exists() && file.length() > 0) {
-    			
-    			int parts = (int)(file.length()/FileTransferHelper.BUFFER_LEN) + 1;
-    			json.setPartsAmount(parts);
-    			PROCESSOR_INSTANCE.sendData(FileTransferHelper.prepareTransference(json));
-    			
-    			
-    			for (int i = 0; i < parts; i++) {
-    				StandardTransference transference = FileTransferHelper.prepareTransference(file, i, json.getFileCheckSum());
-    				
+    public void sendTransference(LabelWithInfo fileInfo, String path) {
+    	
+    	Thread t = new Thread(() -> {
+    		JsonSendFile jsonQuery = null;
+    		try {
+    			jsonQuery = new JsonSendFile(fileInfo.getFileName(),
+    					                     fileInfo.getFileSizeBytes(),
+    					                     FileTransferHelper.get32Hex(fileInfo.getFile()),    // Check sum   ???
+    					                     path,
+    					                     1);
+
+    			File file = fileInfo.getFile();
+
+    			if (file != null && file.exists() && file.length() > 0) {
+
+    				int parts = (int)(file.length()/FileTransferHelper.BUFFER_LEN) + 1;
+    				jsonQuery.setPartsAmount(parts);
+    				PROCESSOR_INSTANCE.sendData(FileTransferHelper.prepareTransference(jsonQuery));
+
+
+    				for (int i = 0; i < parts; i++) {
+    					StandardTransference transference = FileTransferHelper.prepareTransference(file, i, jsonQuery.getFileCheckSum());
     					PROCESSOR_INSTANCE.sendData(transference);
-    				
-				} 
-    			
-    				
-    		} else
-    			logger.error("File for transfer is empty or doesn't exists");
-    	} catch (Exception e) {
-    		logger.error("File transference failed: " + e.getMessage(), e);
-    	}
+    				} 
+
+
+    			} else
+    				logger.error("File for transfer is empty or doesn't exists");
+    		} catch (Exception e) {
+    			logger.error("File transference failed: " + e.getMessage(), e);
+    		}
+    	});
+    	t.setDaemon(true);
+    	service.submit(t);
     }
 	
 	/**
@@ -128,6 +150,12 @@ public class MessagesProcessor {
 		}
 	}
 	
+	public void refreshFilesOnClient() {
+		Platform.runLater(() -> {
+			currentController.refresh(FilesSource.CLIENT);
+		});
+	}
+	
 	/**
 	 * 
 	 * @param files
@@ -135,7 +163,7 @@ public class MessagesProcessor {
 	public void refreshFilesOnServer(Set<String> files) {
 		Controller.setServerFilesSet(files);
 		Platform.runLater(() -> {
-			currentController.refresh();
+			currentController.refresh(FilesSource.SERVER);
 		});
 	}
 

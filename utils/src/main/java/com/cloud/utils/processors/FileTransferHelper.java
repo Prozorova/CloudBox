@@ -7,21 +7,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
 import com.cloud.utils.exep.IllegalDataException;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.format.MatchStrength;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class FileTransferHelper {
 	
-    public static final int BUFFER_LEN = 10 * 1024 * 1024;   // 10 Mb
+    public static final int BUFFER_LEN = 100 * 1024 * 1024;   // 10 Mb
 	
     public static final int CODE_JSON = 6348296;
     public static final int CODE_FILE = 9861904;

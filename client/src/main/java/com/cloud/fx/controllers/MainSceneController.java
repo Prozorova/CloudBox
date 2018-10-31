@@ -20,10 +20,11 @@ import com.cloud.fx.MessagesProcessor;
 import com.cloud.fx.components.LabelWithInfo;
 import com.cloud.fx.components.LabelWithInfo.FileType;
 import com.cloud.logger.ClientConsoleLogAppender;
-import com.cloud.utils.processors.FileTransferHelper;
-import com.cloud.utils.processors.StandardTransference;
+import com.cloud.utils.processors.FilesProcessor;
 import com.cloud.utils.queries.StandardJsonQuery;
-import com.cloud.utils.queries.json.JsonSendFile;
+import com.cloud.utils.queries.json.JsonDelete;
+import com.cloud.utils.queries.json.JsonGetFile;
+import com.cloud.utils.queries.json.JsonGetFilesList;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -33,6 +34,9 @@ import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableView;
@@ -55,14 +59,17 @@ import javafx.scene.control.TableColumn;
 public class MainSceneController extends Controller implements Initializable {
 	
 	private static final Logger logger = Logger.getLogger(MainSceneController.class);
-
-	private static final String DEF_SERVER_DIR = "Server/";
+	private static final MessagesProcessor MESSAGES_PROCESSOR = MessagesProcessor.getProcessor();
+	
+	private static final FilesProcessor FILES_PROCESSOR = new FilesProcessor();
+	
+	private static final String DEF_SERVER_DIR = "Server";
 	
 	private String currentDirClient;
-	private String currentDirServer = "";
+	private String currentDirServer = "/";
+	private String newDirServer;
     
-	// для регулирования обработки - на сервере или на клиенте
-	enum FilesSource {SERVER, CLIENT};
+	
 	
     @FXML private TextField textField;
 
@@ -125,13 +132,91 @@ public class MainSceneController extends Controller implements Initializable {
 			}
 		};
 		
-		refresh();
-		lblServerPath.setText(DEF_SERVER_DIR);
+		refresh(FilesSource.SERVER);
 		lblClientPath.getStyleClass().add("pathLabels");
 		lblServerPath.getStyleClass().add("pathLabels");
 		
 	}
+    
+    /* ******* ACTION BUTTONS ******* */
 
+	@FXML public void btnShareClickMeReaction() {}
+
+
+	
+	@FXML public void btnConnectClickMeReaction() throws IOException {}
+	
+	
+	@FXML public void btnCopyClickMeReaction() {}
+
+
+	@FXML public void btnContactsClickMeReaction() {}
+
+
+	/**
+	 * Удалить выбранный файл или папку
+	 */
+	@FXML public void btnDeleteClickMeReaction() {
+		String filePath;
+		String log;
+			
+		// если выбран файл на панели клиента
+		if (currentTargetClient != null) {
+			filePath = currentTargetClient.getFile().toPath().toString();
+			
+			if (!getConfirmation("Delete File or Directory", "Are you sure want to remove "+filePath+"?"))
+					return;
+			
+			try {
+				log = FILES_PROCESSOR.deleteFile(filePath);
+				throwAlertMessage("INFO", log);
+				logger.debug(log);
+
+				filesOnClient.remove(currentTargetClient);
+				showFilesInDir(FilesSource.CLIENT);
+
+				currentTargetClient = null;
+				
+			} catch (Exception e) {
+				throwAlertMessage("ERROR", "Removing "+filePath+" failed.");
+				logger.error("Removing "+filePath+" failed: "+e.getMessage(), e);
+			}
+		
+		// если выбран файл на панели сервера
+		} else if (currentTargetServer != null) {
+			filePath = currentDirServer + currentTargetServer.getFileName();
+			
+			if (!getConfirmation("Delete File or Directory", "Are you sure want to remove "+filePath+"?"))
+				return;
+		
+			MESSAGES_PROCESSOR.sendTransference(new JsonDelete(filePath));
+			
+			currentTargetServer = null;
+			
+		} else {
+			throwAlertMessage("ERROR", "Choose file or directory for removing.");
+		}
+	}
+
+
+	@FXML public void btnExportClickMeReaction() {}
+
+
+	@FXML public void btnImportClickMeReaction() {}
+
+
+	/**
+	 * перейти в свой корневой каталог
+	 */
+	@FXML public void btnHomeClickMeReaction() {
+		
+		this.newDirServer = "";
+		MESSAGES_PROCESSOR.sendTransference(new JsonGetFilesList(newDirServer));
+	}
+
+
+	@FXML public void btnLogOffClickMeReaction() {}
+	
 	/*
      * TODO переделать в консоль + получение консольных команд
      */
@@ -141,37 +226,70 @@ public class MainSceneController extends Controller implements Initializable {
         textField.clear();
         textField.requestFocus();
     }
-    
-    /**
-     * Вспомогательный метод для выведения текста в консоль
-     * @param str текст для записи в консоль
-     */
-    public void writeToConsole(Node e) {
-    	Platform.runLater(() -> {
-    		textFlowConsole.getChildren().add(e);
-    		scrollPaneConsole.vvalueProperty().bind(textFlowConsole.heightProperty());
-		});
-    }
 
-    public void testSend(ActionEvent actionEvent) {
-        try {
-            Socket socket = new Socket("localhost", 8189);
-            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-//            MyFile mf = new MyFile();
-//            oos.writeObject(mf);
-            oos.close();
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+	/**
+	 * Открыть для просмотра директорию для начала работы на клиенте
+	 * сейчас используется для тестирования - показывает файлы в папках, 
+	 * позволяет имитировать работу дропбокса: можно перекидывать файлы
+	 * с клиента на сервер (осуществляется реальное клиент-серверное
+	 * взаимодействие и копирование файла)
+	 * @throws IOException
+	 */
+	@FXML public void btnNewClickMeReaction() {
+		DirectoryChooser directoryChooser = new DirectoryChooser();
+		directoryChooser.setTitle("Open Resource Folder");
+		File selectedDir = directoryChooser.showDialog(mainBorderPane.getScene().getWindow());
+		
+		 if (selectedDir != null && selectedDir.isDirectory())
+			 changeFolderClient(selectedDir.toPath());
+	}
 
 
-	@FXML public void btnShareClickMeReaction() {}
+	@FXML public void btnPropertiesClickMeReaction() {}
 
 
+	@FXML public void btnAddAllClickMeReaction() {}
+
+
+	@FXML public void btnAddClickMeReaction() {
+		if (currentTargetClient != null)
+			copyFile(currentTargetClient, FilesSource.CLIENT, FilesSource.SERVER);
+		currentTargetClient = null;
+	}
+
+
+	@FXML public void btnLoadClickMeReaction() {
+		if (currentTargetServer != null)
+			copyFile(currentTargetServer, FilesSource.SERVER, FilesSource.CLIENT);
+		currentTargetServer = null;
+	}
+
+
+	@FXML public void btnLoadAllClickMeReaction() {}
+
+
+	@FXML public void cloudExit() {
+		System.exit(0);
+	}
 	
-	@FXML public void btnConnectClickMeReaction() throws IOException {
+	
+	
+	/* ******* OTHER METHODS ******* */
+	
+	private boolean getConfirmation (String header, String msg)  {
+		
+		Alert alert = new Alert(AlertType.CONFIRMATION);
+		alert.setTitle(header);
+		alert.setHeaderText(null);
+		alert.setContentText(msg);
+		
+		Optional<ButtonType> option = alert.showAndWait();
+		
+		if (option.get() == ButtonType.OK)
+			return true;
+		else 
+			return false;
+		
 	}
 	
 	/**
@@ -234,7 +352,7 @@ public class MainSceneController extends Controller implements Initializable {
 
 				if (myLabel != null) {
 					// инициализация поведения и добавление в список
-					initializeBehaviorLabel(myLabel, FilesSource.CLIENT);
+					initializeBehaviorLabel(myLabel, FilesSource.SERVER);
 					filesSet.add(myLabel);
 				} else
 					logger.error("file "+fileInfo+" skipped");
@@ -244,11 +362,27 @@ public class MainSceneController extends Controller implements Initializable {
 	}
 	
 	@Override
-	public void refresh() {
-		Set<String> files = getFilesOnServer();
-		if (files != null && !files.isEmpty())
-			this.filesOnServer = gatherFilesInDirServer(files);
-		showFilesInDir(FilesSource.SERVER);
+	public void refresh(FilesSource source) {
+		switch (source) {
+		case CLIENT:
+			changeFolderClient(Paths.get(currentDirClient));
+			break;
+		case SERVER:
+			
+			if (newDirServer != null) {
+				currentDirServer = newDirServer+"/";
+				newDirServer = null;
+			}
+			
+			lblServerPath.setText(DEF_SERVER_DIR+currentDirServer);
+			Set<String> files = getFilesOnServer();
+			if (files != null && !files.isEmpty())
+				this.filesOnServer = gatherFilesInDirServer(files);
+			showFilesInDir(FilesSource.SERVER);
+			
+			break;
+		}
+		
 	}
 	
 	/**
@@ -269,8 +403,16 @@ public class MainSceneController extends Controller implements Initializable {
 				if (source == FilesSource.CLIENT) 
 					changeFolderClient(Paths.get(currentDirClient).getParent());
 
-				else //TODO
-					System.out.println("Double clicked");
+				else {
+					try {
+						this.newDirServer = Paths.get(currentDirServer).getParent().toString();
+						StandardJsonQuery json = new JsonGetFilesList(newDirServer);
+						MESSAGES_PROCESSOR.sendTransference(json);
+					} catch (NullPointerException e) {
+						this.newDirServer = null;
+						Controller.throwAlertMessage("ERROR", "It's your root directory!");
+					}
+				}
 			}
 		});
 		
@@ -366,18 +508,24 @@ public class MainSceneController extends Controller implements Initializable {
 				EventTarget eventTarget = event.getTarget();
 				logger.debug("Clicked: " + eventTarget);
 				
-				if (filesSource == FilesSource.CLIENT) 
+				if (filesSource == FilesSource.CLIENT) {
 					currentTargetClient = file;
-				else 
+					currentTargetServer = null;
+				}
+				else {
 					currentTargetServer = file;
+					currentTargetClient = null;
+				}
 				
 				// двойное нажатие на значок директории
 				if (event.getClickCount() == 2 && file.getFileType() == FileType.DIRECTORY) {
 					
-					if (filesSource == FilesSource.CLIENT) 
+					if (filesSource == FilesSource.CLIENT)
 						changeFolderClient(file.getFile().toPath());
-					else 
-						System.out.println("Double clicked - SERVER");
+					else {
+						this.newDirServer = currentDirServer+file.getFileName();
+						MESSAGES_PROCESSOR.sendTransference(new JsonGetFilesList(newDirServer));
+					}
 				}
 			}
 		});
@@ -391,112 +539,36 @@ public class MainSceneController extends Controller implements Initializable {
 	 */
 	private void copyFile(LabelWithInfo file, FilesSource fromfilesSource, FilesSource tofilesSource) {
 		
-		Set<LabelWithInfo> destSet = (tofilesSource == FilesSource.CLIENT ? filesOnClient : filesOnServer);
-
-		JsonSendFile jsonQuery = null;
-		try {
-			jsonQuery = new JsonSendFile(file.getFileName(),
-					                     file.getFileSizeBytes(),
-					                     FileTransferHelper.get32Hex(file.getFile()),    // Check sum   ???
-					                     currentDirServer,
-					                     1);
-		} catch (IOException e) {
-			logger.debug("File transfer failed: " + e.getMessage(),e);
+		// отправить файл на сервер
+		if (tofilesSource == FilesSource.SERVER)
+			MESSAGES_PROCESSOR.sendTransference(file, currentDirServer);
+		
+		// запросить файл с сервера
+		else {
+			if (currentDirClient == null || currentDirClient.equals("")) {
+				throwAlertMessage("ERROR", "No chosen directory for file to copy to.");
+				return;
+			}
+			MESSAGES_PROCESSOR.sendTransference(new JsonGetFile(currentDirServer+file.getFileName()));
+			addFile(currentDirServer+file.getFileName(), currentDirClient);
 		}
-		//			if (tofilesSource == FilesSource.CLIENT)
-		//				filePath = currentDirClient;
-
-		if (jsonQuery != null)
-			MessagesProcessor.getProcessor().sendTransference(file.getFile(), jsonQuery);
-		else {}
-			// TODO
-
 	}
-	
-	
-
-	@FXML public void btnCopyClickMeReaction() {}
-
-
-	@FXML public void btnContactsClickMeReaction() {}
-
-
-	@FXML public void btnDeleteClickMeReaction() {}
-
-
-	@FXML public void btnExportClickMeReaction() {}
-
-
-	@FXML public void btnImportClickMeReaction() {}
-
-
-	/**
-	 * перейти в свой корневой каталог
-	 */
-	@FXML public void btnHomeClickMeReaction() {
-		this.currentDirServer = DEF_SERVER_DIR;
-		this.filesOnServer = gatherFilesInDirServer(this.getFilesOnServer());
-		showFilesInDir(FilesSource.SERVER);
-		lblServerPath.setText(DEF_SERVER_DIR);
-	}
-
-
-	@FXML public void btnLogOffClickMeReaction() {}
-
-
-	/**
-	 * Открыть для просмотра директорию для начала работы на клиенте
-	 * сейчас используется для тестирования - показывает файлы в папках, 
-	 * позволяет имитировать работу дропбокса: можно перекидывать файлы
-	 * с клиента на сервер (осуществляется реальное клиент-серверное
-	 * взаимодействие и копирование файла)
-	 * @throws IOException
-	 */
-	@FXML public void btnNewClickMeReaction() {
-		DirectoryChooser directoryChooser = new DirectoryChooser();
-		directoryChooser.setTitle("Open Resource Folder");
-		File selectedDir = directoryChooser.showDialog(mainBorderPane.getScene().getWindow());
-		
-		 if (selectedDir != null && selectedDir.isDirectory())
-			 changeFolderClient(selectedDir.toPath());
-	}
-
-
-	@FXML public void btnPropertiesClickMeReaction() {}
-
-
-	@FXML public void btnAddAllClickMeReaction() {}
-
-
-	@FXML public void btnAddClickMeReaction() {
-		if (currentTargetClient != null)
-			copyFile(currentTargetClient, FilesSource.CLIENT, FilesSource.SERVER);
-		currentTargetClient = null;
-	}
-
-
-	@FXML public void btnLoadClickMeReaction() {}
-
-
-	@FXML public void btnLoadAllClickMeReaction() {}
-
-
-	@FXML public void cloudExit() {
-		System.exit(0);
-	}
-	
-	private static String filePath;
-
-
-	public static String getFilePath() {
-		return filePath;
-		
-	}
+    
+    /**
+     * Вспомогательный метод для выведения текста в консоль
+     * @param str текст для записи в консоль
+     */
+    public void writeToConsole(Node e) {
+    	Platform.runLater(() -> {
+    		textFlowConsole.getChildren().add(e);
+    		scrollPaneConsole.vvalueProperty().bind(textFlowConsole.heightProperty());
+		});
+    }
 
 	@Override
 	protected void finalize() throws Throwable {
 		try {
-//			CloudBoxClient.getInstance().disconnect();
+			CloudBoxClient.getInstance().disconnect();
 		} finally {
 			super.finalize();
 		}

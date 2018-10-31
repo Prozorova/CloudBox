@@ -16,7 +16,7 @@ public class JsonConfirm extends StandardJsonQuery {
 	public static final String PARAM_NAME_DIR_FILES = "filesInDir";
 
 	/**
-	 * конструктор в случае успешной передачи файла
+	 * конструктор в случае успешного выполнения запроса
 	 * @param answer результат
 	 */
 	@SuppressWarnings("serial")
@@ -35,7 +35,7 @@ public class JsonConfirm extends StandardJsonQuery {
 	}
 	
 	/**
-	 * конструктор на случай неудачи в получении файла
+	 * конструктор на случай неудачи
 	 */
 	@SuppressWarnings("serial")
 	public JsonConfirm() {

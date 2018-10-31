@@ -47,7 +47,13 @@
 			    <Button fx:id="btnNew" onAction="#btnNewClickMeReaction">
 					<tooltip><Tooltip text="New folder" /></tooltip>
 				</Button>
-				<Button fx:id="btnCopy" onAction="#btnCopyClickMeReaction">
+				<Button fx:id="btnDelete" onAction="#btnDeleteClickMeReaction">
+					<tooltip><Tooltip text="Delete" /></tooltip>
+				</Button>
+				<Button fx:id="btnHome" onAction="#btnHomeClickMeReaction">
+					<tooltip><Tooltip text="To home" /></tooltip>
+				</Button>
+<!-- 				<Button fx:id="btnCopy" onAction="#btnCopyClickMeReaction">
 					<tooltip><Tooltip text="Copy" /></tooltip>
 				</Button>
 				<Button fx:id="btnConnect" onAction="#btnConnectClickMeReaction">
@@ -56,17 +62,11 @@
 				<Button fx:id="btnContacts" onAction="#btnContactsClickMeReaction">
 					<tooltip><Tooltip text="Contacts" /></tooltip>
 				</Button>
-				<Button fx:id="btnDelete" onAction="#btnDeleteClickMeReaction">
-					<tooltip><Tooltip text="Delete" /></tooltip>
-				</Button>
 				<Button fx:id="btnExport" onAction="#btnExportClickMeReaction">
 					<tooltip><Tooltip text="Export" /></tooltip>
 				</Button>
 				<Button fx:id="btnImport" onAction="#btnImportClickMeReaction">
 					<tooltip><Tooltip text="Import" /></tooltip>
-				</Button>
-				<Button fx:id="btnHome" onAction="#btnHomeClickMeReaction">
-					<tooltip><Tooltip text="To home" /></tooltip>
 				</Button>
 				<Button fx:id="btnLogOff" onAction="#btnLogOffClickMeReaction">
 					<tooltip><Tooltip text="Log Off" /></tooltip>
@@ -77,7 +77,7 @@
 				</Button>
 				<Button fx:id="btnShare" onAction="#btnShareClickMeReaction">
 					<tooltip><Tooltip text="Share file" /></tooltip>
-				</Button>
+				</Button> -->
 			</HBox>
 		</VBox>
 	</top>

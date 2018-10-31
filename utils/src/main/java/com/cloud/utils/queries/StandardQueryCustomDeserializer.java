@@ -5,11 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.utils.queries.StandardJsonQuery.QueryType;
-import com.cloud.utils.queries.json.JsonAuth;
-import com.cloud.utils.queries.json.JsonConfirm;
-import com.cloud.utils.queries.json.JsonResultAuth;
-import com.cloud.utils.queries.json.JsonSendFile;
-import com.cloud.utils.queries.json.JsonSimpleMessage;
+import com.cloud.utils.queries.json.*;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -60,6 +56,20 @@ public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJs
 			case MESSAGE:
 				jsonQuery = new JsonSimpleMessage(root.standardParams.get(JsonSimpleMessage.PARAM_NAME_MESSAGE),
 						                          Boolean.parseBoolean(root.standardParams.get(JsonSimpleMessage.PARAM_NAME_DISCONNECT)));
+				break;
+			case DELETE:
+				jsonQuery = new JsonDelete(root.standardParams.get(JsonDelete.PARAM_NAME_FILEPATH));
+				break;
+			case RENAME:
+				jsonQuery = new JsonRename(root.standardParams.get(JsonRename.PARAM_NAME_FILEPATH),
+						                   root.standardParams.get(JsonRename.PARAM_NAME_NEWNAME));
+				break;
+			case GET_LIST:
+				jsonQuery = new JsonGetFilesList(root.standardParams.get(JsonGetFilesList.PARAM_NAME_DIRPATH));
+				break;
+			case GET_FILE:
+				jsonQuery = new JsonGetFile(root.standardParams.get(JsonGetFile.PARAM_NAME_FILEPATH));
+				break;
 			default:
 				break;
 		}
