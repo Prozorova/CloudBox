@@ -23,8 +23,6 @@ public class FilesProcessor {
 	
 	private static final String div = StandardJsonQuery.DIVIDER;
 	
-	
-	
 	/**
 	 * Собрать в сет информацию о файлах в папке
 	 * @param path путь к папке
@@ -67,7 +65,12 @@ public class FilesProcessor {
 		return set;
 	}
 	
-	
+	/**
+	 * удалить файл
+	 * @param filePath путь к файлу
+	 * @return информация для записи в лог
+	 * @throws Exception
+	 */
 	public String deleteFile(String filePath) throws Exception {
 		
 		Path path;
@@ -89,7 +92,13 @@ public class FilesProcessor {
 		return log;
 	}
 	
-	
+	/**
+	 * переименовать или переместить файл
+	 * @param currentFile путь к файлу для переименования или перемещению
+	 * @param newFile новый путь к файлу
+	 * @return информация для записи в лог
+	 * @throws Exception
+	 */
 	public String moveFile(String currentFile, String newFile) throws Exception {
 	
 		String log;
@@ -103,6 +112,28 @@ public class FilesProcessor {
 		} else {
 			FileUtils.moveToDirectory(curPath.toFile(), newPath.getParent().toFile(), true);
 			log = "   "+curPath.getFileName()+" moved to "+newPath.getParent();
+		}
+		
+		return log;
+	}
+	
+	/**
+	 * создание папки в заданной
+	 * @param sourceDir директория, где будет создана новая
+	 * @param folderName имя новой папки
+	 * @return нформация для записи в лог
+	 * @throws Exception
+	 */
+	public String createFolder(String sourceDir, String folderName) throws Exception {
+		String log; 
+		
+		Path newPath = Paths.get(sourceDir, folderName);
+		
+		if (newPath.toFile().exists())
+			log = folderName+" folder already exists.";
+		else {
+			Files.createDirectory(Paths.get(sourceDir, folderName));
+			log = folderName+" folder successfully created.";
 		}
 		
 		return log;

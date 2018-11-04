@@ -16,9 +16,13 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * подготавливает объекты для отправки по сети
+ * @author prozorova 02.11.2018
+ */
 public class FileTransferHelper {
 	
-    public static final int BUFFER_LEN = 100 * 1024 * 1024;   // 10 Mb
+    public static final int BUFFER_LEN = 100 * 1024 * 1024;   // 100 Mb
 	
     public static final int CODE_JSON = 6348296;
     public static final int CODE_FILE = 9861904;
@@ -26,7 +30,15 @@ public class FileTransferHelper {
     // для работы с json
  	private static ObjectMapper mapper = new ObjectMapper();
 
-    
+    /**
+     * подготовить файл или его часть для отправки
+     * @param file файл, который отправляем
+     * @param index номер части файла
+     * @param fileID контрольная сумма
+     * @return объект, подготовленный для передачи
+     * @throws IllegalDataException
+     * @throws IOException
+     */
 	public static StandardTransference prepareTransference(File file, int index, String fileID)
 			throws IllegalDataException, IOException {
 		
@@ -66,9 +78,18 @@ public class FileTransferHelper {
 		return message;
 	}
 	
+	/**
+	 * подготовить json для отправки
+	 * @param json
+	 * @return объект, подготовленный для передачи
+	 * @throws JsonGenerationException
+	 * @throws JsonMappingException
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws IllegalDataException
+	 */
 	public static StandardTransference prepareTransference(StandardJsonQuery json) 
-			throws JsonGenerationException, JsonMappingException, FileNotFoundException, 
-			IOException, IllegalDataException  {
+			throws IOException, IllegalDataException  {
 		
 		//TODO для тестирования - убрать
 		mapper.writeValue(new FileOutputStream("111.json", false), json);
@@ -76,9 +97,16 @@ public class FileTransferHelper {
 		byte[] jsonBytes = mapper.writeValueAsBytes(json);
 		
 		return StandardTransference.getStandardTransference(jsonBytes);
-		
 	}
 	
+	
+	/**
+	 * подсчет контрольной суммы файла
+	 * @param file файл
+	 * @return контрольная сумма
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static String get32Hex(File file) throws FileNotFoundException, IOException  {
 		return DigestUtils.md2Hex(new FileInputStream(file));
 	}

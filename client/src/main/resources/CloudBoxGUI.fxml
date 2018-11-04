@@ -53,9 +53,13 @@
 				<Button fx:id="btnHome" onAction="#btnHomeClickMeReaction">
 					<tooltip><Tooltip text="To home" /></tooltip>
 				</Button>
-<!-- 				<Button fx:id="btnCopy" onAction="#btnCopyClickMeReaction">
-					<tooltip><Tooltip text="Copy" /></tooltip>
+				<Button fx:id="btnRename" onAction="#btnRenameClickMeReaction">
+					<tooltip><Tooltip text="Rename file or directory" /></tooltip>
 				</Button>
+				<Button fx:id="btnNewFolder" onAction="#btnNewFolderClickMeReaction">
+					<tooltip><Tooltip text="NewFolder" /></tooltip>
+				</Button>
+<!-- 				
 				<Button fx:id="btnConnect" onAction="#btnConnectClickMeReaction">
 					<tooltip><Tooltip text="Connect" /></tooltip>
 				</Button>

@@ -69,7 +69,7 @@ public class MessageDecodeHelper  {
 				if (pathClient != CLIENT_COM_SENDFILE) {
 					// вытаскиваем заданный путь к файлу или папке
 					path = pathClient +                // путь к папке
-					       json.getFilePath();         // путь к запрашиваему файлу ни папке
+					       json.getFilePath();         // путь к запрашиваему файлу или папке
 				
 					if (json instanceof JsonGetFile) 
 						((JsonGetFile)json).setFilePathOld(json.getFilePath());
@@ -90,9 +90,11 @@ public class MessageDecodeHelper  {
 				} 
 			}
 			
-			// отправляем запрос дальше во всех случаях, кроме получения файла.
+			// отправляем запрос дальше во всех случаях, кроме получения файла на сервере:
 		    // получение файла подтвердим (или нет -  в зависимости от исхода операции) 
-		    // после его фактического получения
+		    // после его фактического получения.
+			// если получили файл на клиенте - json надо вернуть, чтобы клиентский декодер
+			// подставил путь для данного файла
 			if (jsonQuery.getQueryType() != QueryType.SEND_FILE || pathClient == CLIENT_COM_SENDFILE)
 				out = jsonQuery;
 			

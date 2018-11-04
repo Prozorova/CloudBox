@@ -3,14 +3,15 @@ package com.cloud.fx.controllers;
 import java.awt.MouseInfo;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
 
@@ -22,14 +23,15 @@ import com.cloud.fx.components.LabelWithInfo.FileType;
 import com.cloud.logger.ClientConsoleLogAppender;
 import com.cloud.utils.processors.FilesProcessor;
 import com.cloud.utils.queries.StandardJsonQuery;
+import com.cloud.utils.queries.json.JsonCreateDir;
 import com.cloud.utils.queries.json.JsonDelete;
 import com.cloud.utils.queries.json.JsonGetFile;
 import com.cloud.utils.queries.json.JsonGetFilesList;
+import com.cloud.utils.queries.json.JsonRename;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -41,6 +43,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -51,6 +54,7 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.DirectoryChooser;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.Button;
 
 /**
  * Осуществляет управление основным экраном порльзовательского интерфейса
@@ -99,6 +103,7 @@ public class MainSceneController extends Controller implements Initializable {
 	// текущие элементы в таргете
 	private LabelWithInfo currentTargetClient;
 	private LabelWithInfo currentTargetServer;
+	@FXML Button btnRename;
 	
     
     @Override
@@ -132,7 +137,9 @@ public class MainSceneController extends Controller implements Initializable {
 			}
 		};
 		
+		// отображаем список файлов на сервере в своей корневой папке
 		refresh(FilesSource.SERVER);
+		// отображаем над таблицами текущие папки
 		lblClientPath.getStyleClass().add("pathLabels");
 		lblServerPath.getStyleClass().add("pathLabels");
 		
@@ -144,10 +151,41 @@ public class MainSceneController extends Controller implements Initializable {
 
 
 	
-	@FXML public void btnConnectClickMeReaction() throws IOException {}
+	@FXML public void btnConnectClickMeReaction() {}
 	
 	
-	@FXML public void btnCopyClickMeReaction() {}
+	/**
+	 * создать новую папку
+	 */
+	@FXML public void btnNewFolderClickMeReaction() {
+		ButtonType type = getConfirmation("New folder creation", 
+                                          "Where do you want to create new folder?",
+                                          "Server",
+                                          "Client");
+		String name = getAdditionalInformation("New folder creation", "Input directory name:", "directory name");
+		String log;
+		
+		if (type != null && name != null && !name.equals("")) 
+			switch (type.getText()) {
+
+			case "Server":
+				MESSAGES_PROCESSOR.sendTransference(new JsonCreateDir(currentDirServer, name));
+				break;
+
+			case "Client":
+				try {
+					log = FILES_PROCESSOR.createFolder(currentDirClient, name);
+					changeFolderClient(Paths.get(currentDirClient));
+					logger.debug(log);
+					throwAlertMessage("INFO", log);
+				} catch (Exception e) {
+					logger.error("Folder creation failed: "+e.getMessage(), e);
+					throwAlertMessage("ERROR", "Folder creation failed.");
+				}
+				break;
+			}
+		
+	}
 
 
 	@FXML public void btnContactsClickMeReaction() {}
@@ -164,7 +202,7 @@ public class MainSceneController extends Controller implements Initializable {
 		if (currentTargetClient != null) {
 			filePath = currentTargetClient.getFile().toPath().toString();
 			
-			if (!getConfirmation("Delete File or Directory", "Are you sure want to remove "+filePath+"?"))
+			if (getConfirmation("Delete File or Directory", "Are you sure want to remove "+filePath+"?") == ButtonType.CANCEL)
 					return;
 			
 			try {
@@ -186,7 +224,7 @@ public class MainSceneController extends Controller implements Initializable {
 		} else if (currentTargetServer != null) {
 			filePath = currentDirServer + currentTargetServer.getFileName();
 			
-			if (!getConfirmation("Delete File or Directory", "Are you sure want to remove "+filePath+"?"))
+			if (getConfirmation("Delete File or Directory", "Are you sure want to remove "+filePath+"?") == ButtonType.CANCEL)
 				return;
 		
 			MESSAGES_PROCESSOR.sendTransference(new JsonDelete(filePath));
@@ -213,6 +251,56 @@ public class MainSceneController extends Controller implements Initializable {
 		this.newDirServer = "";
 		MESSAGES_PROCESSOR.sendTransference(new JsonGetFilesList(newDirServer));
 	}
+	
+	/**
+	 * переименовать файл или каталог
+	 */
+	@FXML public void btnRenameClickMeReaction() {
+		Path filePath;
+		String log;
+		String newName;
+		
+		// если выбран файл на панели клиента
+		if (currentTargetClient != null) {
+			filePath = currentTargetClient.getFile().toPath();
+
+			newName = getAdditionalInformation("Rename File or Directory", 
+					                           "Input new name for "+filePath+":", 
+					                           currentTargetClient.getFileName());
+			if (newName == null)
+				return;
+			
+			try {
+				log = FILES_PROCESSOR.moveFile(filePath.toString(), filePath.getParent() + File.separator + newName);
+				throwAlertMessage("INFO", log);
+				logger.debug(log);
+
+				changeFolderClient(filePath.getParent());
+				currentTargetClient = null;
+
+			} catch (Exception e) {
+				throwAlertMessage("ERROR", "Renaming "+filePath+" failed.");
+				logger.error("Renaming "+filePath+" failed: "+e.getMessage(), e);
+			}
+
+		// если выбран файл на панели сервера
+		} else if (currentTargetServer != null) {
+			filePath = Paths.get(currentDirServer + currentTargetServer.getFileName());
+
+			newName = getAdditionalInformation("Rename File or Directory", 
+					                           "Input new name for "+filePath+":", 
+					                           currentTargetServer.getFileName());
+			if (newName == null)
+				return;
+
+			MESSAGES_PROCESSOR.sendTransference(new JsonRename(filePath.toString(), newName));
+			currentTargetServer = null;
+
+		} else {
+			throwAlertMessage("ERROR", "Choose file or directory for renaming.");
+		}
+		
+	}
 
 
 	@FXML public void btnLogOffClickMeReaction() {}
@@ -229,11 +317,6 @@ public class MainSceneController extends Controller implements Initializable {
 
 	/**
 	 * Открыть для просмотра директорию для начала работы на клиенте
-	 * сейчас используется для тестирования - показывает файлы в папках, 
-	 * позволяет имитировать работу дропбокса: можно перекидывать файлы
-	 * с клиента на сервер (осуществляется реальное клиент-серверное
-	 * взаимодействие и копирование файла)
-	 * @throws IOException
 	 */
 	@FXML public void btnNewClickMeReaction() {
 		DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -276,21 +359,54 @@ public class MainSceneController extends Controller implements Initializable {
 	
 	/* ******* OTHER METHODS ******* */
 	
-	private boolean getConfirmation (String header, String msg)  {
+	/**
+	 * вывести окно с кнопками: OK и Cancel по умолчанию
+	 * @param header заголовок
+	 * @param msg текст сообщения
+	 * @return выбор пользователя
+	 */
+	private ButtonType getConfirmation (String header, String msg, String...buttons)  {
 		
 		Alert alert = new Alert(AlertType.CONFIRMATION);
 		alert.setTitle(header);
 		alert.setHeaderText(null);
 		alert.setContentText(msg);
 		
+		if (buttons.length != 0) {
+			alert.getButtonTypes().clear();
+			ButtonType[] types = new ButtonType[buttons.length];
+			
+			for (int i = 0; i < buttons.length; i++)
+				types[i] = new ButtonType(buttons[i]);
+			
+			alert.getButtonTypes().addAll(types);
+			
+		}
 		Optional<ButtonType> option = alert.showAndWait();
 		
-		if (option.get() == ButtonType.OK)
-			return true;
-		else 
-			return false;
-		
+		return option.get();
 	}
+	
+	/**
+	 * запрос дополнительной информации у пользователя
+	 * @param header заголовок
+	 * @param msg текст сообщения
+	 * @return полученная информация
+	 */
+	private String getAdditionalInformation(String header, String msg, String fileName) {
+		
+		TextInputDialog dialog = new TextInputDialog(fileName);
+		dialog.setTitle(header);
+		dialog.setContentText(msg);
+
+		Optional<String> result = dialog.showAndWait();
+
+		if (result.isPresent())
+			return result.get();
+		else
+			return null;
+	}
+	
 	
 	/**
 	 * Собрать все файлы из папки в отсортированный список
@@ -376,7 +492,7 @@ public class MainSceneController extends Controller implements Initializable {
 			
 			lblServerPath.setText(DEF_SERVER_DIR+currentDirServer);
 			Set<String> files = getFilesOnServer();
-			if (files != null && !files.isEmpty())
+			if (files != null )
 				this.filesOnServer = gatherFilesInDirServer(files);
 			showFilesInDir(FilesSource.SERVER);
 			
@@ -573,5 +689,4 @@ public class MainSceneController extends Controller implements Initializable {
 			super.finalize();
 		}
 	}
-	
 }

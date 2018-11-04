@@ -26,6 +26,7 @@ public class JsonSendFile extends StandardJsonQuery implements PathContainer{
 	 * @param filePath относительный путь к файлу
 	 * @param fileOwner владелец файла
 	 */
+	@SuppressWarnings("serial")
 	public JsonSendFile(String fileName,
 			            Long fileSize,
 			            String fileCheckSum,

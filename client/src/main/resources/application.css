@@ -114,7 +114,7 @@ HBox {
 	-fx-translate-y: 3;
 }
 
-#btnCopy {
+#btnNewFolder {
 	-fx-background-image: url(Icons/copy.png);
 }
 
@@ -132,6 +132,10 @@ HBox {
 
 #btnExport {
 	-fx-background-image: url(Icons/export.png);
+}
+
+#btnRename {
+	-fx-background-image: url(Icons/rename.png);
 }
 
 #btnImport {

@@ -41,5 +41,8 @@ public class TransferMessageEncoder extends MessageToByteEncoder<StandardTransfe
 		
 		// передаем сами данные
 		out.writeBytes(msg.getData());
+		
+		// освобождаем объект (помечаем для переиспользования)
+		msg.freeObject();
 	}
 }

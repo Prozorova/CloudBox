@@ -70,6 +70,10 @@ public class StandardQueryCustomDeserializer extends JsonDeserializer<StandardJs
 			case GET_FILE:
 				jsonQuery = new JsonGetFile(root.standardParams.get(JsonGetFile.PARAM_NAME_FILEPATH));
 				break;
+			case CREATE_DIR:
+				jsonQuery = new JsonCreateDir(root.standardParams.get(JsonCreateDir.PARAM_NAME_PATH),
+						                      root.standardParams.get(JsonCreateDir.PARAM_NAME_NEW_FOLDER));
+				break;
 			default:
 				break;
 		}

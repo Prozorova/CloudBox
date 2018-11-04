@@ -18,9 +18,11 @@ import com.cloud.utils.processors.StandardTransference;
 import com.cloud.utils.queries.StandardJsonQuery;
 import com.cloud.utils.queries.json.JsonAuth;
 import com.cloud.utils.queries.json.JsonConfirm;
+import com.cloud.utils.queries.json.JsonCreateDir;
 import com.cloud.utils.queries.json.JsonDelete;
 import com.cloud.utils.queries.json.JsonGetFile;
 import com.cloud.utils.queries.json.JsonGetFilesList;
+import com.cloud.utils.queries.json.JsonRename;
 import com.cloud.utils.queries.json.JsonSendFile;
 import com.cloud.utils.queries.json.JsonSimpleMessage;
 
@@ -93,10 +95,35 @@ public class TransferMessageHandler extends SimpleChannelInboundHandler<Standard
 				break;
 				
 			case RENAME:
+				JsonRename jsonRename = (JsonRename) msg;
+				try {
+					Path path = Paths.get(jsonRename.getFilePath());
+					String newPath = path.getParent() +
+							         File.separator +
+							         jsonRename.getNewFileName();
+					String log = filesProcessor.moveFile(jsonRename.getFilePath(), newPath);
+					logger.debug(log);
+					jsonAnswer = new JsonConfirm(filesProcessor.gatherFilesFromDir(path.getParent().toString()));
+				} catch (Exception e) {
+					logger.error("Renaming "+jsonRename.getFilePath()+" failed: "+e.getMessage(), e);
+					jsonAnswer = new JsonSimpleMessage("Renaming "+jsonRename.getFilePath()+" failed.");
+				} 
 				break;
 			case GET_FILE:
 				JsonGetFile jsonGetFile = (JsonGetFile)msg;
 				sendTransference(jsonGetFile.getFilePath(), jsonGetFile.getFilePathOld(), ctx);
+				break;
+				
+			case CREATE_DIR:
+				JsonCreateDir jsonCreate = (JsonCreateDir)msg;
+				try {
+					String log = filesProcessor.createFolder(jsonCreate.getFilePath(), jsonCreate.getNewFolderName());
+					logger.debug(log);
+					jsonAnswer = new JsonConfirm(filesProcessor.gatherFilesFromDir(jsonCreate.getFilePath()));
+				} catch (Exception e) {
+					logger.error("Creating "+jsonCreate.getNewFolderName()+" failed: "+e.getMessage(), e);
+					jsonAnswer = new JsonSimpleMessage("Creating "+jsonCreate.getNewFolderName()+" failed.");
+				}
 				break;
 
 			default:      // все ошибочные сообщения, которые не должны поступать на сервер
@@ -127,8 +154,8 @@ public class TransferMessageHandler extends SimpleChannelInboundHandler<Standard
 	
 	
 	/**
-	 * 
-	 * @param pathToFile
+	 * Подготовка и отправка запрошенного файла клиенту
+	 * @param pathToFile реальный путь к файлу на сервере
 	 * @param path путь к файлу, как передал его клиент
 	 * @param ctx
 	 */
