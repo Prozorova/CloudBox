@@ -70,7 +70,7 @@ public class MainSceneController extends Controller implements Initializable {
 	private static final String DEF_SERVER_DIR = "Server";
 	
 	private String currentDirClient;
-	private String currentDirServer = "/";
+	private String currentDirServer = File.separator;
 	private String newDirServer;
     
 	
@@ -248,7 +248,7 @@ public class MainSceneController extends Controller implements Initializable {
 	 */
 	@FXML public void btnHomeClickMeReaction() {
 		
-		this.newDirServer = "";
+		this.newDirServer = File.separator;
 		MESSAGES_PROCESSOR.sendTransference(new JsonGetFilesList(newDirServer));
 	}
 	
@@ -486,7 +486,7 @@ public class MainSceneController extends Controller implements Initializable {
 		case SERVER:
 			
 			if (newDirServer != null) {
-				currentDirServer = newDirServer+"/";
+				currentDirServer = newDirServer;
 				newDirServer = null;
 			}
 			
@@ -522,6 +522,8 @@ public class MainSceneController extends Controller implements Initializable {
 				else {
 					try {
 						this.newDirServer = Paths.get(currentDirServer).getParent().toString();
+						if (!newDirServer.endsWith(File.separator))
+							newDirServer = newDirServer + File.separator;
 						StandardJsonQuery json = new JsonGetFilesList(newDirServer);
 						MESSAGES_PROCESSOR.sendTransference(json);
 					} catch (NullPointerException e) {
@@ -639,7 +641,7 @@ public class MainSceneController extends Controller implements Initializable {
 					if (filesSource == FilesSource.CLIENT)
 						changeFolderClient(file.getFile().toPath());
 					else {
-						this.newDirServer = currentDirServer+file.getFileName();
+						this.newDirServer = currentDirServer+file.getFileName()+File.separator;
 						MESSAGES_PROCESSOR.sendTransference(new JsonGetFilesList(newDirServer));
 					}
 				}
